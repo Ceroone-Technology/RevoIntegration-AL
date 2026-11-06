@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Integración Revo · Business Central</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: columna de lectura de ~1080px; diagramas a ancho completo con scroll propio; tickets de TPV como motivo (mono, números fiscales). */
+:root {
+  --bg: #f3f5f7;
+  --surface: #ffffff;
+  --ink: #16202b;
+  --muted: #5b6876;
+  --line: #d5dce3;
+  --revo: #b4580a;
+  --revo-soft: #fbeedf;
+  --bc: #0b6f6c;
+  --bc-soft: #dcf0ee;
+  --legacy: #6a5a8c;
+  --legacy-soft: #ece8f4;
+  --good: #1f7a3a;
+  --warn: #a15c00;
+  --bad: #b3261e;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11171d; --surface: #18212a; --ink: #e6ecf1; --muted: #9aa8b5; --line: #2c3946;
+    --revo: #f0a25a; --revo-soft: #3a2a1a; --bc: #4fc2bd; --bc-soft: #15332f;
+    --legacy: #b6a5dc; --legacy-soft: #2a2438; --good: #6ccf8a; --warn: #f0b45a; --bad: #f08a80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11171d; --surface: #18212a; --ink: #e6ecf1; --muted: #9aa8b5; --line: #2c3946;
+  --revo: #f0a25a; --revo-soft: #3a2a1a; --bc: #4fc2bd; --bc-soft: #15332f;
+  --legacy: #b6a5dc; --legacy-soft: #2a2438; --good: #6ccf8a; --warn: #f0b45a; --bad: #f08a80;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 64px; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); line-height: 1.05; font-weight: 700; }
+h2 { font-size: 1.65rem; font-weight: 600; }
+h3 { font-size: 1.1rem; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { max-width: 66ch; color: var(--muted); font-size: 1.05rem; }
+.mono { font-family: var(--font-mono); font-size: 0.92em; }
+header { display: grid; gap: 18px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 8px; }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: grid; gap: 4px; }
+.fact b { font-family: var(--font-display); font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fact span { color: var(--muted); font-size: 0.88rem; }
+section { display: grid; gap: 18px; min-width: 0; }
+.sec-head { display: grid; gap: 6px; }
+.sec-head p { color: var(--muted); max-width: 70ch; }
+.scroller { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+/* Mapa mental */
+.mindmap { display: block; min-width: 940px; width: 100%; height: auto; }
+.mm-link { fill: none; stroke: var(--line); stroke-width: 2; }
+.mm-core { fill: var(--bc); }
+.mm-core-t { fill: var(--surface); font-family: var(--font-display); font-weight: 600; font-size: 19px; }
+.mm-core-s { fill: var(--surface); font-family: var(--font-mono); font-size: 12px; opacity: 0.9; }
+.mm-card { fill: var(--bg); stroke: var(--line); stroke-width: 1; }
+.mm-tab { fill: var(--bc-soft); }
+.mm-tab.revo { fill: var(--revo-soft); }
+.mm-h { fill: var(--ink); font-family: var(--font-display); font-weight: 600; font-size: 16px; }
+.mm-h.revo { fill: var(--revo); }
+.mm-h.bc { fill: var(--bc); }
+.mm-leaf { fill: var(--ink); font-family: var(--font-body); font-size: 13.5px; }
+.mm-leaf .k { font-family: var(--font-mono); fill: var(--muted); font-size: 12.5px; }
+.mm-dot { fill: var(--muted); }
+/* Flujo diario */
+.flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0; counter-reset: step; }
+.flow li { position: relative; padding: 16px 18px 16px 16px; background: var(--surface); border: 1px solid var(--line); margin: -1px 0 0 -1px; display: grid; gap: 6px; align-content: start; counter-increment: step; min-width: 0; }
+.flow li::before { content: counter(step, decimal-leading-zero); font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+.flow li .where { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; justify-self: start; }
+.where.revo { color: var(--revo); background: var(--revo-soft); }
+.where.bc { color: var(--bc); background: var(--bc-soft); }
+.where.user { color: var(--legacy); background: var(--legacy-soft); }
+.flow li p { color: var(--muted); font-size: 0.9rem; }
+.flow li:not(:last-child)::after { content: "→"; position: absolute; right: 8px; top: 12px; color: var(--muted); font-size: 1rem; }
+.note { display: flex; gap: 10px; align-items: baseline; padding: 12px 16px; border-left: 3px solid var(--bc); background: var(--bc-soft); border-radius: 0 6px 6px 0; font-size: 0.95rem; }
+.note b { color: var(--bc); }
+/* Arquitectura */
+.arch { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.arch-col { display: grid; gap: 0; align-content: start; min-width: 0; }
+.arch-col > h3 { margin-bottom: 12px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.tag { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 3px; }
+.tag.legacy { color: var(--legacy); background: var(--legacy-soft); }
+.tag.bc { color: var(--bc); background: var(--bc-soft); }
+.node { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 12px 14px; display: grid; gap: 4px; }
+.node.revo { border-left: 4px solid var(--revo); }
+.node.legacy { border-left: 4px solid var(--legacy); }
+.node.bc { border-left: 4px solid var(--bc); }
+.node small { color: var(--muted); font-size: 0.85rem; }
+.node ul { margin: 4px 0 0; padding-left: 18px; color: var(--muted); font-size: 0.86rem; }
+.arrow { justify-self: center; display: grid; justify-items: center; padding: 4px 0; color: var(--muted); font-family: var(--font-mono); font-size: 0.75rem; text-align: center; }
+.arrow::before { content: ""; width: 2px; height: 16px; background: var(--line); }
+.arrow::after { content: "▼"; font-size: 0.7rem; line-height: 1; color: var(--muted); }
+.box-in { border: 1px dashed var(--bc); border-radius: 8px; padding: 12px; display: grid; gap: 0; background: var(--bc-soft); }
+.box-in > .lbl { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bc); margin-bottom: 8px; }
+/* Tres comprobaciones */
+.checks { display: grid; gap: 14px; }
+.checks-top { justify-self: center; text-align: center; background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 6px; font-family: var(--font-display); font-weight: 600; }
+.checks-top .mono { color: var(--bg); opacity: 0.8; }
+.checks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.check { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--c, var(--bc)); border-radius: 6px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; }
+.check .vs { font-family: var(--font-mono); font-size: 0.82rem; color: var(--muted); }
+.check .cause { font-size: 0.92rem; }
+.check .cause b { color: var(--c, var(--bc)); }
+/* Comparativa */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+thead th { font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; background: var(--bg); position: sticky; top: 0; }
+thead th.l { color: var(--legacy); }
+thead th.n { color: var(--bc); }
+tbody th { font-weight: 600; width: 18%; }
+tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+td.l { color: var(--muted); width: 38%; }
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; margin-right: 6px; vertical-align: 1px; }
+.pill.risk { color: var(--bad); border: 1px solid var(--bad); }
+.pill.gain { color: var(--good); border: 1px solid var(--good); }
+/* Cambios y pendientes */
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.list ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.list li { display: grid; grid-template-columns: 12px 1fr; gap: 10px; align-items: baseline; }
+.list li::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--dot, var(--bc)); transform: translateY(-1px); }
+.list.pending li::before { background: var(--warn); }
+.list h4 { margin: 6px 0 -2px; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.list li span { color: var(--muted); display: block; font-size: 0.88rem; }
+footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 4px; }
+@media (max-width: 560px) {
+  .wrap { padding-inline: 16px; gap: 44px; }
+  .flow li:not(:last-child)::after { content: "↓"; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fact, .check { transition: border-color .2s; }
+  .fact:hover, .check:hover { border-color: var(--muted); }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Grupo Olé · Migración del TPV Revo a Business Central · 09/10/2026</span>
+    <h1>Integración Revo · Business Central</h1>
+    <p class="lede">Cómo funciona la nueva extensión AL que sustituye al conector Laravel: qué hace cada día, qué controla y qué cambia respecto a la solución anterior. Las facturas y los cobros se crean siempre en borrador; registrar sigue siendo una decisión de una persona.</p>
+    <div class="facts">
+      <div class="fact"><b>0 servidores</b><span>Corre dentro de Business Central. Sin cron, worker ni MySQL propio.</span></div>
+      <div class="fact"><b>1 tarea diaria</b><span>Una entrada de cola de proyectos de BC procesa todos los centros activos.</span></div>
+      <div class="fact"><b>Borrador</b><span>Facturas, abonos y cobros quedan sin registrar para revisión.</span></div>
+      <div class="fact"><b>~4.600 vs ~6.600</b><span>Líneas de código AL frente a PHP del conector anterior.</span></div>
+    </div>
+  </header>
+
+  <section aria-labelledby="s-map">
+    <div class="sec-head">
+      <span class="eyebrow">Mapa de la solución</span>
+      <h2 id="s-map">Qué incluye la extensión</h2>
+      <p>Cinco bloques en torno a un mismo objetivo: que cada ticket de Revo acabe como documento de venta revisable en BC, con su cobro y su trazabilidad.</p>
+    </div>
+    <div class="scroller">
+      <svg class="mindmap" viewBox="0 0 1100 640" role="img" aria-label="Mapa mental de la extensión Revo TPV Integration con cinco bloques: configuración, importación, documentos en BC, automatización y control">
+        <!-- conectores -->
+        <path class="mm-link" d="M420 300 C 360 300, 360 140, 330 140" />
+        <path class="mm-link" d="M680 300 C 740 300, 740 140, 770 140" />
+        <path class="mm-link" d="M420 330 C 360 330, 360 480, 330 480" />
+        <path class="mm-link" d="M680 330 C 740 330, 740 480, 770 480" />
+        <path class="mm-link" d="M550 360 L 550 452" />
+        <!-- núcleo -->
+        <rect class="mm-core" x="420" y="268" width="260" height="92" rx="10" />
+        <text class="mm-core-t" x="550" y="306" text-anchor="middle">Revo TPV Integration</text>
+        <text class="mm-core-s" x="550" y="330" text-anchor="middle">extensión AL · BC 26 · cloud</text>
+
+        <!-- Configuración -->
+        <rect class="mm-card" x="20" y="30" width="310" height="220" rx="8" />
+        <rect class="mm-tab" x="20" y="30" width="310" height="36" rx="8" />
+        <text class="mm-h bc" x="36" y="54">Configuración</text>
+        <g class="mm-leaf">
+          <circle class="mm-dot" cx="38" cy="86" r="3"/><text x="50" y="91">Centros y credenciales cifradas</text>
+          <circle class="mm-dot" cx="38" cy="112" r="3"/><text x="50" y="117">Letras de prefijo <tspan class="k">S N R X O A I L</tspan></text>
+          <circle class="mm-dot" cx="38" cy="138" r="3"/><text x="50" y="143">Supergrupo → producto <tspan class="k">8 → 8_AL</tspan></text>
+          <circle class="mm-dot" cx="38" cy="164" r="3"/><text x="50" y="169">Método de pago → sección de diario</text>
+          <circle class="mm-dot" cx="38" cy="190" r="3"/><text x="50" y="195">Cliente genérico y plantilla</text>
+          <circle class="mm-dot" cx="38" cy="216" r="3"/><text x="50" y="221">Dimensiones centro y sector</text>
+        </g>
+
+        <!-- Importación -->
+        <rect class="mm-card" x="770" y="30" width="310" height="220" rx="8" />
+        <rect class="mm-tab revo" x="770" y="30" width="310" height="36" rx="8" />
+        <text class="mm-h revo" x="786" y="54">Importación desde Revo</text>
+        <g class="mm-leaf">
+          <circle class="mm-dot" cx="788" cy="86" r="3"/><text x="800" y="91">API Revo: facturas con pagos</text>
+          <circle class="mm-dot" cx="788" cy="112" r="3"/><text x="800" y="117">API Revo: líneas de pedido</text>
+          <circle class="mm-dot" cx="788" cy="138" r="3"/><text x="800" y="143">Tablas staging dentro de BC</text>
+          <circle class="mm-dot" cx="788" cy="164" r="3"/><text x="800" y="169">Upsert: reimportar no duplica</text>
+          <circle class="mm-dot" cx="788" cy="190" r="3"/><text x="800" y="195">Nunca borra datos importados</text>
+          <circle class="mm-dot" cx="788" cy="216" r="3"/><text x="800" y="221">Detecta cambios tras crear en BC</text>
+        </g>
+
+        <!-- Automatización -->
+        <rect class="mm-card" x="20" y="380" width="310" height="194" rx="8" />
+        <rect class="mm-tab" x="20" y="380" width="310" height="36" rx="8" />
+        <text class="mm-h bc" x="36" y="404">Automatización</text>
+        <g class="mm-leaf">
+          <circle class="mm-dot" cx="38" cy="436" r="3"/><text x="50" y="441">Tarea diaria en la cola de BC</text>
+          <circle class="mm-dot" cx="38" cy="462" r="3"/><text x="50" y="467">Relanzar día o rango de fechas</text>
+          <circle class="mm-dot" cx="38" cy="488" r="3"/><text x="50" y="493">Reprocesar facturas y pagos</text>
+          <circle class="mm-dot" cx="38" cy="514" r="3"/><text x="50" y="519">Actualizar estados y registros</text>
+          <circle class="mm-dot" cx="38" cy="540" r="3"/><text x="50" y="545">Fallo aislado por factura</text>
+        </g>
+
+        <!-- Documentos BC -->
+        <rect class="mm-card" x="770" y="380" width="310" height="194" rx="8" />
+        <rect class="mm-tab" x="770" y="380" width="310" height="36" rx="8" />
+        <text class="mm-h bc" x="786" y="404">Documentos en BC</text>
+        <g class="mm-leaf">
+          <circle class="mm-dot" cx="788" cy="436" r="3"/><text x="800" y="441">Factura o abono en borrador</text>
+          <circle class="mm-dot" cx="788" cy="462" r="3"/><text x="800" y="467">Nº fiscal de Revo como nº BC</text>
+          <circle class="mm-dot" cx="788" cy="488" r="3"/><text x="800" y="493">Cliente por NIF o alta automática</text>
+          <circle class="mm-dot" cx="788" cy="514" r="3"/><text x="800" y="519">IVA, UdM y descuento global</text>
+          <circle class="mm-dot" cx="788" cy="540" r="3"/><text x="800" y="545">Cobro en diario, liquidando</text>
+        </g>
+
+        <!-- Control -->
+        <rect class="mm-card" x="400" y="452" width="300" height="168" rx="8" />
+        <rect class="mm-tab" x="400" y="452" width="300" height="36" rx="8" />
+        <text class="mm-h bc" x="416" y="476">Control y revisión</text>
+        <g class="mm-leaf">
+          <circle class="mm-dot" cx="418" cy="508" r="3"/><text x="430" y="513">4 vistas acordadas con el cliente</text>
+          <circle class="mm-dot" cx="418" cy="534" r="3"/><text x="430" y="539">Dif. pagos · líneas · vs BC</text>
+          <circle class="mm-dot" cx="418" cy="560" r="3"/><text x="430" y="565">Log de errores con detalle</text>
+          <circle class="mm-dot" cx="418" cy="586" r="3"/><text x="430" y="591">Tabla de pagos de solo lectura</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-flow">
+    <div class="sec-head">
+      <span class="eyebrow">Proceso diario</span>
+      <h2 id="s-flow">Qué pasa cada día, paso a paso</h2>
+      <p>El mismo ciclo se repite por centro activo. Si una factura falla, queda en error con su motivo y el resto sigue su curso.</p>
+    </div>
+    <ol class="flow">
+      <li><span class="where bc">BC · cola</span><h3>Tarea diaria</h3><p>La cola de proyectos lanza la sincronización del día anterior para cada centro activo.</p></li>
+      <li><span class="where revo">Revo → BC</span><h3>Importar</h3><p>Facturas con sus pagos y después las líneas, a tablas staging. Reimportar actualiza, no duplica.</p></li>
+      <li><span class="where bc">BC · staging</span><h3>Comprobar</h3><p>Líneas completas, cobros frente a total y suma de líneas frente a cabecera.</p></li>
+      <li><span class="where bc">BC · ventas</span><h3>Crear borrador</h3><p>Factura o abono con el nº de Revo, cliente por NIF, productos por supergrupo y dimensiones.</p></li>
+      <li><span class="where bc">BC · diario</span><h3>Pasar cobros</h3><p>Una línea por pago en la sección de diario de su método, liquidando el documento.</p></li>
+      <li><span class="where user">Persona</span><h3>Revisar y registrar</h3><p>Las vistas señalan qué falta o no cuadra. Se registra desde BC cuando está correcto.</p></li>
+    </ol>
+    <div class="note"><b>Regla fija</b><span>La extensión nunca registra facturas ni diarios. Tampoco toca un documento que ya existe en BC con ese número: solo lo enlaza.</span></div>
+  </section>
+
+  <section aria-labelledby="s-arch">
+    <div class="sec-head">
+      <span class="eyebrow">Arquitectura</span>
+      <h2 id="s-arch">Antes y ahora</h2>
+      <p>El conector anterior era un sistema aparte que hablaba con BC por API. La extensión vive dentro de BC y trabaja con sus propias tablas.</p>
+    </div>
+    <div class="arch">
+      <div class="arch-col">
+        <h3>Conector Laravel <span class="tag legacy">actual</span></h3>
+        <div class="node revo"><b>API Revo</b><small>Facturas, pagos y líneas por centro</small></div>
+        <div class="arrow">cron 00:10</div>
+        <div class="node legacy"><b>Servidor Laravel propio</b><small>Hay que mantener vivos tres procesos</small>
+          <ul><li>Cron del sistema + worker de cola</li><li>MySQL con 18 tablas intermedias</li><li>18 jobs encadenados en lotes</li></ul></div>
+        <div class="arrow">~13 llamadas API por factura</div>
+        <div class="node legacy"><b>API estándar BC + API custom Ceroone</b><small>OAuth con secreto por empresa</small></div>
+        <div class="arrow">registra solo</div>
+        <div class="node"><b>Business Central</b><small>Facturas y diarios registrados automáticamente, sin revisión previa</small></div>
+      </div>
+      <div class="arch-col">
+        <h3>Extensión AL <span class="tag bc">nueva</span></h3>
+        <div class="node revo"><b>API Revo</b><small>Mismos datos, mismas credenciales por centro</small></div>
+        <div class="arrow">cola de BC</div>
+        <div class="box-in">
+          <span class="lbl">Dentro de Business Central</span>
+          <div class="node bc"><b>Tablas staging Revo</b><small>Cabeceras, líneas y pagos con estado y comprobaciones</small></div>
+          <div class="arrow">código AL, sin API</div>
+          <div class="node bc"><b>Facturas, abonos y diario de cobros</b><small>En borrador, con dimensiones y trazabilidad al ticket</small></div>
+        </div>
+        <div class="arrow">revisión</div>
+        <div class="node"><b>Usuario de contabilidad</b><small>Revisa con las vistas y registra cuando cuadra</small></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-checks">
+    <div class="sec-head">
+      <span class="eyebrow">Control</span>
+      <h2 id="s-checks">Tres diferencias, tres causas distintas</h2>
+      <p>Cada factura se compara con su total de Revo desde tres ángulos. La columna que sale en rojo indica directamente dónde está el problema. No es un informe comparativo: es el diagnóstico mínimo para operar.</p>
+    </div>
+    <div class="checks">
+      <div class="checks-top">Total factura Revo <span class="mono">· IVA incluido</span></div>
+      <div class="checks-grid">
+        <div class="check" style="--c: var(--revo)"><h3>Dif. pagos</h3><span class="vs">total − Σ cobros Revo (sin propina)</span><p class="cause"><b>Causa:</b> Revo cobró de menos o de más, o la factura no tiene cobros.</p></div>
+        <div class="check" style="--c: var(--legacy)"><h3>Dif. líneas</h3><span class="vs">total − (Σ líneas − descuento de pedido)</span><p class="cause"><b>Causa:</b> los datos de Revo no cuadran entre sí, por ejemplo líneas que no llegaron.</p></div>
+        <div class="check" style="--c: var(--bc)"><h3>Dif. vs BC</h3><span class="vs">total − importe IVA incl. del documento BC</span><p class="cause"><b>Causa:</b> la conversión a BC, o alguien editó o borró el borrador.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-cmp">
+    <div class="sec-head">
+      <span class="eyebrow">Comparativa</span>
+      <h2 id="s-cmp">Laravel frente a extensión AL</h2>
+      <p>Basada en el análisis del repositorio Laravel actual (156 commits, oct 2024 – jul 2026) y en el código de la extensión.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Aspecto</th><th class="l">Conector Laravel</th><th class="n">Extensión AL</th></tr></thead>
+        <tbody>
+          <tr><th>Dónde corre</th><td class="l">Servidor propio con cron, worker de cola y MySQL.</td><td><span class="pill gain">mejora</span>Dentro de BC. Nada que hospedar ni vigilar fuera.</td></tr>
+          <tr><th>Qué crea en BC</th><td class="l">Facturas y diarios que el propio proceso registra. Registra diarios completos, incluidas líneas manuales de usuarios.</td><td><span class="pill gain">mejora</span>Borradores de factura, abono y cobro. Nada se registra sin revisión.</td></tr>
+          <tr><th>Errores</th><td class="l">Solo en <span class="mono">laravel.log</span> y códigos de estado en BD. Sin interfaz.</td><td><span class="pill gain">mejora</span>Estado por factura y pago, log con detalle, vistas y FactBox en BC.</td></tr>
+          <tr><th>Fallo de un centro</th><td class="l"><span class="pill risk">riesgo</span>Cancela el lote y corta la cadena para todos los centros.</td><td>Cada factura se procesa aislada; el resto continúa.</td></tr>
+          <tr><th>Relanzar</th><td class="l">Comando <span class="mono">php artisan</span> en el servidor.</td><td>Botón "Relanzar día" con rango de fechas, o reprocesar la selección.</td></tr>
+          <tr><th>Duplicados</th><td class="l"><span class="pill risk">riesgo</span>Reintentos de cola pueden ejecutar un job dos veces; líneas y cobros sin clave única.</td><td>Upsert por centro + pedido + factura; si el documento ya existe en BC, solo se enlaza.</td></tr>
+          <tr><th>Cliente</th><td class="l">Busca por NIF en una copia local; alta solo con un flag desactivado por defecto.</td><td>Busca en BC por NIF normalizado; alta automática solo con NIF/CIF/NIE válido.</td></tr>
+          <tr><th>Productos</th><td class="l"><span class="pill risk">riesgo</span>Supergrupo desconocido crea "SUPER GRUPO NUEVO" en BC, y se duplica en cada aparición.</td><td>Supergrupo sin mapeo deja la factura en error con mensaje claro.</td></tr>
+          <tr><th>Dimensiones</th><td class="l">No se envían.</td><td><span class="pill gain">mejora</span>Centro y sector por centro; analítica desde el producto.</td></tr>
+          <tr><th>Cobros</th><td class="l">Diario por método; un bug hace que el diario por defecto sea siempre el del centro 1.</td><td>Sección de diario por centro y método, configurable en una página.</td></tr>
+          <tr><th>Credenciales</th><td class="l"><span class="pill risk">riesgo</span>Tokens y secretos en claro en los seeders del repositorio.</td><td>Tokens Revo cifrados en el almacenamiento aislado de BC; nunca en tablas.</td></tr>
+          <tr><th>Dependencias</th><td class="l">API custom de la extensión Ceroone para hora, forma de pago, descuento y nº registrado.</td><td>Sin API custom: nº registrado y descuento se fijan en el propio documento. Hora y código de pago de Ceroone, mediante un evento para una app puente.</td></tr>
+          <tr><th>Configuración</th><td class="l">Seeders para 2 centros; el resto cargado a mano en producción. Valores fijos en código.</td><td>Páginas en BC y paquete de configuración por centro, reutilizable en producción.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-now">
+    <div class="sec-head">
+      <span class="eyebrow">Estado</span>
+      <h2 id="s-now">Acordado con Luis y lo que falta</h2>
+    </div>
+    <div class="two">
+      <div class="list">
+        <h3>Incorporado en esta iteración</h3>
+        <ul>
+          <li><div>Cuatro vistas<span>Todo, pendientes por subir, con error e incidencia de pagos.</span></div></li>
+          <li><div>Diferencia de líneas frente a cabecera<span>Junto a las de pagos y vs BC, en lista, ficha y FactBox.</span></div></li>
+          <li><div>Alta automática de clientes por NIF<span>Con validación de NIF, NIE y CIF; hereda la configuración del genérico del centro.</span></div></li>
+          <li><div>Segunda dimensión por centro<span>Para el sector (SRE2 Carretera en Almudévar).</span></div></li>
+          <li><div>Reprocesar pagos desde su propia vista<span>La tabla de pagos sigue siendo de solo lectura.</span></div></li>
+          <li><div>Paquete de configuración del centro GAL aplicado<span>Importado en el sandbox sin errores: centro, 8 letras, 11 supergrupos y 15 métodos de pago.</span></div></li>
+          <li><div>Dimensiones de los productos revisadas<span>Los productos de Almudévar ya traen sector, analítica y centro (1S SRE2 · 2A · 3C 089), con regla "Mismo código".</span></div></li>
+          <li><div>Dimensiones en la ficha del centro GAL<span>3C = 089 y 1S = SRE2, iguales a las de los productos.</span></div></li>
+          <li><div>Secciones de diario de cobros asignadas<span>Secciones ALM… (ALMTARJET, ALMEFECTIV, ALMGLOVO…) en los métodos con los nombres reales que envía Revo.</span></div></li>
+        </ul>
+      </div>
+      <div class="list pending">
+        <h3>Pendiente</h3>
+        <h4>Antes del 15/10 · configuración y prueba</h4>
+        <ul>
+          <li><div>Sección en 5 métodos con nombre del Excel<span>Ch/ Gourmet, Ch/ Restaurant, Ch/ Sodexo, Glovo (Efectivo) y Uber: misma sección que su equivalente real (ALMGOURMET, ALMRESTAUR, ALMSODEXO, ALMGLOVOEF, ALMUBER).</span></div></li>
+          <li><div>Probar con Relanzar día en GAL<span>Con Luis como tester. Revisar las vistas Con error e Incidencia de pagos.</span></div></li>
+        </ul>
+        <h4>Paso a producción · no bloquea la prueba</h4>
+        <ul>
+          <li><div>Serie S definitiva<span>El sandbox usa V-FAC+; en producción será GALS.</span></div></li>
+          <li><div>Paquetes del resto de centros<span>Con los nombres de método que envía Revo, no los del Excel. Frida y Faustino no se configuran; Ole Almozara está cerrado.</span></div></li>
+          <li><div>Líneas de un pedido fechadas otro día<span>Caso heredado del Laravel, aún sin cubrir.</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Fuentes: código de la extensión AL "Revo TPV Integration" (Ceroone), repositorio RevoBusinessCentralGrupoOle y Excel MapeoRevoToBusinessCentral.</span>
+    <span>Preparado por Omar Carreño · Ceroone · octubre de 2026.</span>
+  </footer>
+</div>
+</body>
+</html>

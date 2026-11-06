@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual de usuario: integración Revo – Business Central</title>
+<style>
+  :root {
+    --bg: #ffffff; --surface: #f6f7f9; --text: #1d2330; --muted: #5b6475;
+    --border: #dfe3ea; --accent: #0f6e78; --accent-soft: #e3f2f3; --warn: #9a5b00; --warn-soft: #fff4e0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c; --surface: #1c2027; --text: #e6e9ef; --muted: #a2aab8;
+      --border: #2e343e; --accent: #5cc4cd; --accent-soft: #17343a; --warn: #f0b45a; --warn-soft: #3a2c12;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.6 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { border-bottom: 2px solid var(--accent); padding-bottom: 16px; margin-bottom: 24px; }
+  h1 { font-size: 28px; margin: 0 0 6px; line-height: 1.25; }
+  .meta { color: var(--muted); font-size: 13px; }
+  h2 { font-size: 21px; margin: 40px 0 10px; padding-top: 8px; border-top: 1px solid var(--border); color: var(--accent); }
+  h3 { font-size: 16px; margin: 24px 0 8px; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  nav.toc { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; }
+  nav.toc strong { display: block; margin-bottom: 4px; }
+  nav.toc ol { margin: 0; }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  .table-wrap { overflow-x: auto; margin: 10px 0 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+  td:first-child { font-weight: 600; min-width: 140px; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+  code { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-size: 13px; }
+  footer { margin-top: 48px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); padding-top: 12px; }
+  @media print {
+    body { font-size: 11pt; }
+    .wrap { max-width: none; padding: 0; }
+    h2 { break-after: avoid; }
+    table, .callout { break-inside: avoid; }
+    nav.toc a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Manual de usuario: integración Revo – Business Central</h1>
+  <div class="meta">Extensión <strong>Revo TPV Integration 1.0.15.0</strong> · Ceroone · 28/10/2026</div>
+</header>
+
+<nav class="toc">
+  <strong>Contenido</strong>
+  <ol>
+    <li><a href="#s1">Qué hace la integración</a></li>
+    <li><a href="#s2">Configuración</a></li>
+    <li><a href="#s3">La lista Facturas Revo</a></li>
+    <li><a href="#s4">Acciones de Facturas Revo</a></li>
+    <li><a href="#s5">Cobros</a></li>
+    <li><a href="#s6">Seguimiento diario</a></li>
+    <li><a href="#s7">Mensajes frecuentes y qué hacer</a></li>
+    <li><a href="#s8">Buenas prácticas</a></li>
+  </ol>
+</nav>
+
+<h2 id="s1">1. Qué hace la integración</h2>
+<p>La integración lleva cada día a Business Central las facturas y los cobros del TPV Revo de cada centro, y <strong>solo registra las facturas que cuadran con Revo</strong>. Lo que no cuadra queda en borrador con el motivo, para que una persona lo revise.</p>
+<p>El recorrido de cada factura es siempre el mismo:</p>
+<ol>
+  <li><strong>Importación.</strong> Lee de Revo las facturas, sus líneas y sus cobros del día. Solo lee: nunca modifica nada en Revo.</li>
+  <li><strong>Borrador.</strong> Crea en BC la factura o el abono en borrador, con el mismo número que en Revo, el cliente (por NIF o el genérico del centro), un producto BC por cada supergrupo de Revo y la hora del ticket.</li>
+  <li><strong>Comprobación.</strong> Compara el borrador con Revo: total, nº de líneas e importe de las líneas.</li>
+  <li><strong>Registro.</strong> Si cuadra, lo registra en BC (y al registrarse se comunica al SII). Si no cuadra, queda en borrador con el <strong>Motivo sin registrar</strong>.</li>
+  <li><strong>Cobros.</strong> Por cada cobro de Revo crea una línea en el diario de cobros de su método de pago, sin registrar, contra el cliente pasarela si está configurado.</li>
+</ol>
+<p>Todo se consulta desde la página <strong>Facturas Revo</strong>. Las invitaciones y los albaranes (letras I y L) quedan <strong>excluidos</strong>: se importan para tenerlos a la vista, pero no se suben a BC salvo que alguien pulse <strong>Forzar subida</strong>.</p>
+
+<h2 id="s2">2. Configuración</h2>
+<p>La configuración se hace una vez por empresa y una vez por centro; después solo se toca cuando aparece algo nuevo en Revo (un producto de un supergrupo nuevo, un método de pago nuevo).</p>
+
+<h3>2.1 Configuración Revo (una por empresa)</h3>
+<div class="table-wrap"><table>
+  <tr><th>Campo</th><th>Para qué sirve</th></tr>
+  <tr><td>Registrar automáticamente si cuadra</td><td>Si está activo, la sincronización registra sola las facturas que cuadran. Desactivado, todo queda en borrador hasta que alguien pulse <strong>Registrar si cuadra</strong>.</td></tr>
+  <tr><td>Crear clientes por NIF</td><td>Si la factura trae un NIF/CIF/NIE válido que no existe en BC, crea el cliente con <strong>nº = NIF</strong>. Si el NIF no es válido, usa el cliente genérico.</td></tr>
+  <tr><td>Plantilla cliente</td><td>Plantilla para los clientes creados por NIF. Sin plantilla, copian los grupos contables del cliente genérico.</td></tr>
+  <tr><td>Días de reintento de errores</td><td>Cuántos días hacia atrás reintenta cada noche las facturas y cobros en error (por defecto 7).</td></tr>
+  <tr><td>Máx. intentos automáticos</td><td>Intentos automáticos antes de dejar una factura en error.</td></tr>
+  <tr><td>Días hacia atrás a sincronizar</td><td>Cuántos días importa la tarea diaria.</td></tr>
+  <tr><td>Prefijo grupo IVA producto / Grupo IVA producto 0% / Unidad de medida</td><td>Cómo se rellenan las líneas de venta (IVA10, IVA21…, UDS).</td></tr>
+</table></div>
+<p>Desde esta página también se crea la <strong>tarea diaria</strong> (botón <em>Crear tarea diaria</em>) y se abre el <strong>Registro de sincronizaciones</strong>.</p>
+
+<h3>2.2 Centros Revo (ficha de cada centro)</h3>
+<div class="table-wrap"><table>
+  <tr><th>Campo</th><th>Para qué sirve</th></tr>
+  <tr><td>Activo</td><td>Solo se sincronizan los centros activos. Desactivarlo detiene la integración de ese centro.</td></tr>
+  <tr><td>Tokens de Revo</td><td>Credenciales de la API de Revo del centro. Se guardan cifrados.</td></tr>
+  <tr><td>Cliente genérico</td><td>Cliente de las facturas sin NIF (simplificadas).</td></tr>
+  <tr><td>Plantilla cliente</td><td>Plantilla propia del centro para clientes por NIF; prevalece sobre la de Configuración Revo.</td></tr>
+  <tr><td>Términos de pago</td><td>Términos de pago de las facturas creadas.</td></tr>
+  <tr><td>Forma de pago sin cobros</td><td>Forma de pago de las facturas que no traen cobros de Revo (facturas a 0, invitaciones). Debe ser una forma de pago <strong>sin cuenta de contrapartida</strong>: si eliges una que la tenga (como CAJA) da error.</td></tr>
+  <tr><td>Almacén / Precios IVA incluido</td><td>Se copian a cada factura.</td></tr>
+  <tr><td>Serie S / N / R</td><td>Series de BC de las simplificadas, nominales y rectificativas. El nº registrado es siempre el de Revo.</td></tr>
+  <tr><td>Supergrupo por defecto</td><td>Supergrupo que se aplica a las líneas que llegan de Revo sin supergrupo.</td></tr>
+  <tr><td>Código / Valor dimensión, Dimensión 2</td><td>Dimensiones del centro (por ejemplo 3C = 089 y sector 1S = SRE2) que se ponen en facturas y cobros.</td></tr>
+</table></div>
+<p>Desde la ficha se abren las tres tablas de mapeo del centro:</p>
+<ul>
+  <li><strong>Letras de prefijo.</strong> Qué hace cada letra del nº de Revo: S, A y O = factura simplificada; N = nominal (exige cliente por NIF); R y X = abono; I (invitaciones) y L (albaranes) = excluidas.</li>
+  <li><strong>Mapeo supergrupos.</strong> Qué producto BC se usa para cada supergrupo de Revo, opcionalmente por % de IVA. <em>Mantener signo del precio</em> se activa para supergrupos con importes negativos (por ejemplo, tarjetas regalo o descuentos).</li>
+  <li><strong>Mapeo métodos de pago.</strong> Para cada método de pago de Revo: <em>Acción</em> (crear línea de diario u omitir), <em>Plantilla</em> y <em>Sección de diario</em> donde va el cobro, <strong>Forma de pago BC</strong> que se pone en la factura y <strong>Cliente pasarela</strong>, la contrapartida del cobro (ver apartado 5). El botón <em>Rellenar forma de pago desde sección</em> asigna de golpe la forma de pago con el mismo código que la sección.</li>
+</ul>
+
+<h2 id="s3">3. La lista Facturas Revo</h2>
+<p><strong>Facturas Revo</strong> es la página de trabajo diaria: una fila por factura de Revo, con su estado en BC y las diferencias con Revo.</p>
+
+<h3>3.1 Estados</h3>
+<div class="table-wrap"><table>
+  <tr><th>Estado</th><th>Qué significa</th><th>Qué hacer</th></tr>
+  <tr><td>Pendiente</td><td>Importada de Revo, aún sin procesar.</td><td>Nada: se procesa en la siguiente sincronización o con <em>Reprocesar selección</em>.</td></tr>
+  <tr><td>Creado (borrador)</td><td>Existe el borrador en BC.</td><td>Si cuadra, se registra solo o con <em>Registrar si cuadra</em>. Si no, revisar el <em>Motivo sin registrar</em>.</td></tr>
+  <tr><td>Registrado</td><td>La factura está registrada en BC.</td><td>Nada.</td></tr>
+  <tr><td>Error</td><td>No se pudo crear el borrador.</td><td>Leer el <em>Mensaje de error</em>, corregir la causa (normalmente un mapeo) y <em>Reprocesar selección</em>.</td></tr>
+  <tr><td>Excluido</td><td>Invitación o albarán (letras I, L): no se sube.</td><td>Nada, o <em>Forzar subida</em> si debe ir a BC.</td></tr>
+</table></div>
+
+<h3>3.2 Vistas</h3>
+<ul>
+  <li><strong>Todo</strong>: todas las facturas.</li>
+  <li><strong>Pendientes por subir</strong>: Pendiente y Error, lo que aún no está en BC.</li>
+  <li><strong>Con error</strong>: solo Error.</li>
+  <li><strong>Incidencia de pagos</strong>: facturas sin cobros, con cobros que no suman el total o con cobros en error.</li>
+</ul>
+<p>Cualquier otra consulta se hace filtrando por columna (por fecha, letra, estado, cliente…).</p>
+
+<h3>3.3 Columnas que conviene conocer</h3>
+<div class="table-wrap"><table>
+  <tr><th>Columna</th><th>Qué indica</th></tr>
+  <tr><td>Mensaje de error</td><td>Por qué no se pudo crear el borrador.</td></tr>
+  <tr><td>Motivo sin registrar</td><td>Por qué un borrador no se registró: no cuadra con Revo, o BC dio error al registrar.</td></tr>
+  <tr><td>Dif. pagos</td><td>Total de la factura menos la suma de sus cobros. Distinto de 0 = incidencia de pagos.</td></tr>
+  <tr><td>Dif. líneas</td><td>Total de la factura menos la suma de sus líneas en Revo.</td></tr>
+  <tr><td>Dif. vs BC</td><td>Total de Revo menos el importe del documento en BC. Distinto de 0 = el borrador no cuadra y no se registra solo.</td></tr>
+  <tr><td>Registro forzado</td><td>Se registró con <em>Forzar registro</em> aunque no cuadraba. En la ficha: quién, cuándo y qué descuadre se ignoró.</td></tr>
+  <tr><td>Subida forzada</td><td>Era una factura excluida que alguien subió con <em>Forzar subida</em>.</td></tr>
+  <tr><td>Documento preexistente</td><td>La factura ya existía en BC (creada por el sistema anterior o a mano): solo se enlaza, sin cobros ni registro automático.</td></tr>
+  <tr><td>Cliente creado</td><td>El cliente se creó automáticamente a partir del NIF.</td></tr>
+</table></div>
+<p>Las diferencias en <strong>rojo</strong> son las que impiden el registro automático o merecen revisión. Al abrir una factura, su ficha muestra además las líneas y los cobros de Revo.</p>
+
+<h2 id="s4">4. Acciones de Facturas Revo</h2>
+<p>Todas las acciones trabajan sobre las <strong>facturas seleccionadas</strong> (marca las casillas de la izquierda), salvo <em>Actualizar estados</em>, que trabaja sobre la vista actual. Ninguna escribe en Revo.</p>
+<div class="table-wrap"><table>
+  <tr><th>Acción</th><th>Qué hace</th><th>Cuándo usarla</th></tr>
+  <tr><td>Reprocesar selección</td><td>Vuelve a intentar crear el borrador y los cobros con la configuración actual. No toca documentos ya creados.</td><td>Después de corregir un mapeo, un cliente o una configuración que daba error.</td></tr>
+  <tr><td>Registrar si cuadra</td><td>Registra los borradores que cuadran con Revo en importe y líneas. Los que no, quedan en borrador con el <em>Motivo sin registrar</em>. Avisa si alguna ya estaba registrada.</td><td>Cuando el registro automático está desactivado, o para registrar al momento.</td></tr>
+  <tr><td>Forzar registro</td><td>Registra los borradores aunque no cuadren con Revo, tras revisarlos. Deja constancia de quién, cuándo y qué descuadre se ignoró. <strong>No salta lo que BC exige</strong>: cuentas, forma de pago y validaciones siguen deteniendo el registro.</td><td>Cuando la diferencia está revisada y se acepta (por ejemplo, un redondeo o un precio corregido a mano en el borrador).</td></tr>
+  <tr><td>Forzar subida</td><td>Sube a BC facturas excluidas (invitaciones): crea el borrador y desde ahí siguen el circuito normal. Deja constancia de quién y cuándo. Las facturas a 0 se registran y se envían al SII.</td><td>Cuando una invitación debe constar en BC.</td></tr>
+  <tr><td>Actualizar estados</td><td>Comprueba si los borradores ya se registraron (también los registrados a mano), si se borró alguno y si los cobros cuadran. No llama a Revo.</td><td>Para refrescar la vista. Evitarla sobre <em>Todo</em> mientras corre un relanzamiento largo.</td></tr>
+  <tr><td>Relanzar día</td><td>Encola la reimportación y el reproceso de un día o de un rango de hasta 31 días (centro vacío = todos). Se ejecuta en segundo plano.</td><td>Para traer un día que falló, o facturas modificadas en Revo después.</td></tr>
+  <tr><td>Abrir documento venta</td><td>Abre el borrador o, si ya está registrado, la factura o abono registrado.</td><td>Para revisar el documento en BC.</td></tr>
+  <tr><td>Pagos</td><td>Abre los cobros de Revo de la factura.</td><td>Para revisar una incidencia de pagos.</td></tr>
+  <tr><td>Log de errores / Registro de sincronizaciones</td><td>Abren el historial de errores y el resumen por día (apartado 6).</td><td>Seguimiento.</td></tr>
+</table></div>
+<p>La ficha de una factura tiene las mismas acciones para esa factura sola: <em>Reprocesar</em>, <em>Forzar registro</em> (solo si es borrador), <em>Forzar subida</em> (solo si está excluida), <em>Abrir documento venta</em> y <em>Log de errores</em>.</p>
+
+<h2 id="s5">5. Cobros</h2>
+<p>Cada cobro de Revo se convierte en <strong>una línea de diario sin registrar</strong>, en la sección de su método de pago (por ejemplo ALMTARJET para tarjeta). La integración nunca registra los diarios de cobro.</p>
+<p>Cada línea lleva:</p>
+<ul>
+  <li><strong>Cuenta</strong>: el cliente de la factura, con <em>Liquida a</em> = la factura, para que al registrarse quede cobrada.</li>
+  <li><strong>Contrapartida</strong>: el <strong>cliente pasarela</strong> del método (por ejemplo, la pasarela de Dojo para tarjeta), si está configurado en <em>Mapeo métodos de pago</em>. Va en una segunda línea al cliente pasarela, con el mismo nº de documento (BC no admite cliente contra cliente en una sola línea): el importe queda pendiente en la pasarela hasta su liquidación. Sin cliente pasarela, la contrapartida es la de la sección de diario.</li>
+  <li><strong>Fecha</strong>, <strong>forma de pago</strong>, <strong>dimensiones del centro</strong>, el nº de Revo como <em>Nº documento externo</em> y la caja en la descripción. La propina no se incluye: el importe es el del cobro sin propina, que es el que se compara con el total de la factura.</li>
+</ul>
+<p><strong>Facturas sin cobros</strong> (por ejemplo, una factura a 0 por un descuento del 100 %): no generan línea de diario y se registran con la <strong>Forma de pago sin cobros</strong> del centro.</p>
+<p>La página <strong>Pagos Revo</strong> muestra cada cobro con su estado:</p>
+<div class="table-wrap"><table>
+  <tr><th>Estado</th><th>Qué significa</th></tr>
+  <tr><td>Pendiente</td><td>Importado, sin procesar.</td></tr>
+  <tr><td>Creado (diario)</td><td>La línea de diario existe.</td></tr>
+  <tr><td>Error</td><td>No se pudo crear la línea (por ejemplo, método sin mapear o sin sección). Corregir el mapeo y pulsar <em>Reprocesar selección</em>.</td></tr>
+  <tr><td>Omitido</td><td>No genera línea: importe 0, método marcado como <em>Omitir</em> o factura preexistente.</td></tr>
+</table></div>
+<p>Los cobros son de solo lectura: no se editan en esta página. <em>Factura Revo</em> abre la factura del cobro.</p>
+
+<h2 id="s6">6. Seguimiento diario</h2>
+<p>Con la tarea diaria activa, basta con revisar cada mañana el <strong>Registro de sincronizaciones</strong> y, si algo sale con incidencias, la vista <strong>Con error</strong> y la columna <em>Motivo sin registrar</em>.</p>
+
+<h3>6.1 Tarea diaria</h3>
+<p>Se crea una vez con <strong>Configuración Revo → Crear tarea diaria</strong>. Cada noche, por cada centro activo:</p>
+<ol>
+  <li>Importa de Revo los días configurados.</li>
+  <li>Reintenta las facturas y cobros en error de los últimos días (<em>Días de reintento de errores</em>), para que lo corregido el día anterior se procese solo.</li>
+  <li>Crea los borradores, comprueba los estados y, si <em>Registrar automáticamente si cuadra</em> está activo, registra los que cuadran.</li>
+  <li>Crea las líneas de cobro.</li>
+  <li>Deja una línea por centro y día en el Registro de sincronizaciones.</li>
+</ol>
+
+<h3>6.2 Registro de sincronizaciones</h3>
+<p>Una línea por centro y día de facturación, tanto de la tarea diaria como de cada relanzamiento.</p>
+<div class="table-wrap"><table>
+  <tr><th>Columna</th><th>Qué indica</th></tr>
+  <tr><td>Resultado</td><td>Correcto (todo registrado o excluido), Con incidencias (algo quedó en error, en borrador o con incidencia de pagos) o Error de importación.</td></tr>
+  <tr><td>Facturas del día, Registradas, En borrador, Con error, Pendientes, Excluidas</td><td>Recuento por estado. Al pulsar el número se abren esas facturas.</td></tr>
+  <tr><td>Incidencias de pagos</td><td>Facturas sin cobros, que no cuadran con ellos o con cobros en error.</td></tr>
+  <tr><td>Importe Revo</td><td>Total facturado en Revo ese día (sin excluidas), para comparar con BC.</td></tr>
+  <tr><td>Causa principal / Facturas con esa causa</td><td>El motivo más repetido del día y a cuántas facturas afecta: suele ser un único mapeo que falta.</td></tr>
+  <tr><td>Error de importación</td><td>Error de la llamada a Revo, si la importación del día falló.</td></tr>
+</table></div>
+<p>Los botones <strong>Semana anterior</strong>, <strong>Esta semana</strong> y <strong>Todos los días</strong> cambian el periodo mostrado.</p>
+
+<h3>6.3 Log de errores</h3>
+<p>Guarda cada error con su fecha, centro, factura y área (importación, documento, cobro, registro). Se abre desde Facturas Revo, desde la ficha de una factura (solo sus errores) o desde Configuración Revo. Desde el log se puede <em>Relanzar día</em> o abrir la <em>Factura Revo</em>.</p>
+
+<h2 id="s7">7. Mensajes frecuentes y qué hacer</h2>
+<div class="callout">Casi todos los errores se resuelven completando un mapeo y pulsando <strong>Reprocesar selección</strong>. Si no se reprocesa, la tarea diaria lo reintenta sola durante los días configurados.</div>
+
+<h3>7.1 Al crear el borrador (columna Mensaje de error)</h3>
+<div class="table-wrap"><table>
+  <tr><th>Mensaje</th><th>Causa</th><th>Solución</th></tr>
+  <tr><td>Supergrupo X (IVA Y %) sin producto configurado en el centro</td><td>Un supergrupo de Revo no tiene producto BC.</td><td>Añadirlo en <em>Mapeo supergrupos</em> del centro y reprocesar.</td></tr>
+  <tr><td>La letra de prefijo "X" no está configurada en el centro</td><td>Llegó una letra nueva en el nº de Revo.</td><td>Añadir la letra en <em>Letras de prefijo</em> del centro.</td></tr>
+  <tr><td>No existe cliente con NIF … y la letra exige cliente identificado</td><td>Factura nominal con NIF mal tecleado o sin datos.</td><td>Crear el cliente a mano con nº = NIF, o corregir el NIF en Revo y relanzar el día.</td></tr>
+  <tr><td>La factura Revo no tiene líneas importadas</td><td>Ticket vacío en Revo (total 0, sin líneas).</td><td>Ninguna: no hay nada que subir.</td></tr>
+  <tr><td>La factura Revo tiene X de Y líneas importadas</td><td>Revo no devolvió todas las líneas.</td><td><em>Relanzar día</em> de esa fecha.</td></tr>
+  <tr><td>No existe el grupo registro IVA producto …</td><td>Un % de IVA sin grupo en BC.</td><td>Crear el grupo de IVA producto (por ejemplo IVA4).</td></tr>
+  <tr><td>El nº X ya está usado en BC por un documento registrado vacío</td><td>Alguien borró el borrador y BC creó un documento vacío con ese nº.</td><td>Volver a emitir la factura con otro número. Ver apartado 8.</td></tr>
+</table></div>
+
+<h3>7.2 Al registrar (columna Motivo sin registrar)</h3>
+<div class="table-wrap"><table>
+  <tr><th>Motivo</th><th>Qué hacer</th></tr>
+  <tr><td>El documento BC no cuadra con el total de Revo (dif. X)</td><td>Revisar el borrador. Si la diferencia es aceptable, <em>Forzar registro</em>; si no, corregir el borrador.</td></tr>
+  <tr><td>Las líneas de Revo no cuadran con su total (dif. X)</td><td>Revisar en Revo. Si se acepta, <em>Forzar registro</em>.</td></tr>
+  <tr><td>Faltan líneas de Revo (X de Y)</td><td><em>Relanzar día</em>. Si persiste, <em>Forzar registro</em> tras revisar.</td></tr>
+  <tr><td>La factura cambió en Revo después de crear el borrador</td><td>Revisar el cambio. Si el borrador es correcto, <em>Forzar registro</em>.</td></tr>
+  <tr><td>El documento ya existía en BC antes de la integración</td><td>Lo registra a mano quien lo creó.</td></tr>
+  <tr><td>BC dio error al registrar: el cobro de Revo (método …) no tiene Forma de pago BC</td><td>Asignar la forma de pago al método en <em>Mapeo métodos de pago</em> (o la <em>Forma de pago sin cobros</em> del centro si la factura no tiene cobros) y volver a registrar.</td></tr>
+  <tr><td>BC dio error al registrar: fecha fuera del periodo de IVA o de registro permitido</td><td>Ampliar las fechas en <em>Configuración de IVA</em> o <em>Configuración contabilidad</em>.</td></tr>
+</table></div>
+
+<h3>7.3 En los cobros (Pagos Revo)</h3>
+<div class="table-wrap"><table>
+  <tr><th>Mensaje</th><th>Qué hacer</th></tr>
+  <tr><td>Método de pago Revo "X" sin mapeo en el centro</td><td>Añadir el método en <em>Mapeo métodos de pago</em> con su sección y forma de pago, y reprocesar.</td></tr>
+  <tr><td>Documento preexistente en BC: pagos no generados</td><td>Normal: la factura ya existía y su cobro lo apunta quien la creó.</td></tr>
+</table></div>
+
+<h2 id="s8">8. Buenas prácticas</h2>
+<div class="callout warn">La integración tolera que se trabaje a mano en BC, con <strong>una sola prohibición: no borrar nunca un borrador creado por la integración</strong>.</div>
+<ul>
+  <li><strong>No borrar borradores.</strong> El borrador ya lleva asignado su nº fiscal. Si se borra, BC crea un documento registrado vacío con ese número para no dejar huecos en la numeración, y la factura ya no se puede subir con ese nº. La integración lo detecta y deja la factura <em>Con error</em> con el aviso, pero hay que volver a emitirla con otro número.</li>
+  <li><strong>Registrar a mano un borrador está permitido.</strong> La integración lo detecta, lo marca como <em>Registrado</em> y no lo vuelve a intentar.</li>
+  <li><strong>Si se crea una factura a mano</strong> por algo que también está en Revo, poner el <strong>nº de Revo en <em>Nº documento externo</em></strong>. Así la integración la enlaza y no crea otra. Su cobro lo apunta quien la creó.</li>
+  <li><strong>No registrar a mano las líneas de cobro sin revisarlas:</strong> la integración nunca las registra; las registra contabilidad cuando corresponde, tras comprobarlas.</li>
+  <li><strong>Forzar registro con criterio.</strong> Queda constancia del usuario y del descuadre ignorado; usarlo solo tras revisar la diferencia.</li>
+  <li><strong>Corregir la causa, no el síntoma.</strong> Ante un error repetido (la <em>Causa principal</em> del Registro de sincronizaciones), completar el mapeo que falta; la tarea diaria reintenta sola los errores de los últimos días (por defecto 7, hasta 3 intentos). Los errores más antiguos no se recuperan solos: tras activar una opción o corregir un mapeo, abrir la vista <em>Con error</em>, seleccionar todo y pulsar <em>Reprocesar selección</em>.</li>
+  <li><strong>Un centro solo lo procesa un sistema.</strong> Mientras el sistema anterior siga activo en un centro, ese centro no se activa en la integración.</li>
+</ul>
+
+<footer>Revo TPV Integration 1.0.15.0 · Manual de usuario · Ceroone (Grupo Bigtoone)</footer>
+</div>
+</body>
+</html>

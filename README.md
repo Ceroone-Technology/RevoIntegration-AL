@@ -114,7 +114,7 @@ $alc = (Get-ChildItem "$env:USERPROFILE\.vscode\extensions\ms-dynamics-smb.al-*\
   3. Mapeos de supergrupos y de métodos de pago, con sus plantillas y secciones `COBROS/ALM*` y clientes pasarela.
   4. *Crear tarea diaria*.
 
-La guía paso a paso de despliegue y pruebas en producción, los resultados de las pruebas y el manual de usuario están en `../docs`, fuera de este repositorio.
+La guía paso a paso de despliegue y pruebas en producción, los resultados de las pruebas, el manual de usuario y el registro del paso a producción están en [`docs/`](docs/). El contexto del proyecto para Claude Code está en [CLAUDE.md](CLAUDE.md).
 
 ## Pendiente a 05/11/2026
 

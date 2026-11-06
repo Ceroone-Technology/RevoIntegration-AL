@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registro paso a producción</title>
+<style>
+:root { --fg:#1f2328; --muted:#59636e; --line:#d1d9e0; --head:#f6f8fa; --accent:#0b6e75; --bg:#ffffff; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e6edf3; --muted:#9198a1; --line:#3d444d; --head:#151b23; --accent:#4fb3bb; --bg:#0d1117; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 "Segoe UI", system-ui, sans-serif; }
+main { max-width:1200px; margin:0 auto; padding:24px 16px 48px; }
+h1 { font-size:24px; margin:0 0 4px; color:var(--accent); }
+h2 { font-size:18px; margin:32px 0 8px; border-bottom:2px solid var(--accent); padding-bottom:4px; }
+h3 { font-size:15px; margin:20px 0 6px; }
+p { margin:6px 0 10px; }
+.scroll { overflow-x:auto; margin:8px 0 16px; }
+table { border-collapse:collapse; width:100%; }
+th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+th { background:var(--head); font-weight:600; }
+code { font-family:Consolas, monospace; font-size:13px; }
+a { color:var(--accent); }
+.st { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; white-space:nowrap; }
+.st0 { background:#eaeef2; color:#424a53; }
+.st1 { background:#fff1c2; color:#7a5500; }
+.st2 { background:#d6f5dc; color:#1a6b30; }
+.st3 { background:#e7e7ef; color:#55556a; }
+footer { margin-top:32px; color:var(--muted); font-size:12px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Registro del paso a producción – Integración Revo BC (GAL)</h1>
+<p>05/11/2026 · Omar Carreño</p>
+<p>La integración Revo – Business Central (extensión <strong>Revo TPV Integration 1.0.18.0</strong>, Ceroone) se despliega en producción para el centro <strong>GAL (Almudévar)</strong> de GRUPO OLE RESTAURACION, S.L. Cada paso se anota aquí con su fecha, responsable y resultado. Este documento es el registro final del paso a producción.</p>
+<p><em>Horas en hora de Lima. Las anotadas antes de las 22:52 del 05/11/2026 son aproximadas (±10 min); desde entonces se toman del reloj del sistema.</em></p>
+<h2>Resumen</h2>
+<div class="scroll"><table><thead><tr><th>Dato</th><th>Valor</th></tr></thead><tbody>
+<tr><td>Entorno</td><td>Producción, empresa GRUPO OLE RESTAURACION, S.L.</td></tr>
+<tr><td>Centro</td><td>GAL (Almudévar)</td></tr>
+<tr><td>Versión instalada</td><td>1.0.18.0</td></tr>
+<tr><td>Aval de Luis Huapaya</td><td>05/11/2026</td></tr>
+<tr><td>Fecha de corte con el Laravel</td><td>04/11/2026 (Laravel detenido para GAL, confirmado por Luis el 05/11/2026)</td></tr>
+<tr><td>Punto de restauración</td><td>05/11/2026 21:04 hora Lima (06/11/2026 02:04 UTC · 03:04 Madrid)</td></tr>
+<tr><td>Repositorio</td><td><a href="https://github.com/Ceroone-Technology/RevoIntegration-AL">github.com/Ceroone-Technology/RevoIntegration-AL</a></td></tr>
+</tbody></table></div>
+<div class="scroll"><table><thead><tr><th>Fase</th><th>Estado</th><th>Inicio</th><th>Fin</th></tr></thead><tbody>
+<tr><td>A. Antes de empezar</td><td><span class="st st2">Hecho</span></td><td>05/11/2026</td><td>05/11/2026</td></tr>
+<tr><td>B. Instalación</td><td><span class="st st2">Hecho</span></td><td>05/11/2026 21:18</td><td>05/11/2026 22:30</td></tr>
+<tr><td>C. Configuración inicial</td><td><span class="st st2">Hecho</span></td><td>05/11/2026 21:40</td><td>05/11/2026 22:51 (C11 pendiente del cliente)</td></tr>
+<tr><td>Fase 0: modo espejo</td><td><span class="st st0">Pendiente</span></td><td>Prevista 06/11/2026, en sesión con Luis</td><td></td></tr>
+<tr><td>Fase 1: solo borradores</td><td><span class="st st0">Pendiente</span></td><td></td><td></td></tr>
+<tr><td>Fase 2: registro</td><td><span class="st st0">Pendiente</span></td><td></td><td></td></tr>
+</tbody></table></div>
+<h2>A. Antes de empezar</h2>
+<p>Los seis puntos previos quedaron cerrados el 05/11/2026; ninguno bloquea la instalación.</p>
+<div class="scroll"><table><thead><tr><th>#</th><th>Paso</th><th>Fecha y hora</th><th>Responsable</th><th>Estado</th><th>Notas</th></tr></thead><tbody>
+<tr><td>A1</td><td>Fecha de corte con el Laravel para GAL</td><td>05/11/2026</td><td>Luis Huapaya</td><td><span class="st st2">Hecho</span></td><td>Corte el 04/11/2026. Laravel detenido para GAL (confirmado por Luis el 05/11/2026)</td></tr>
+<tr><td>A2</td><td>Envío a Hacienda sin duplicar</td><td>05/11/2026</td><td>Luis Huapaya</td><td><span class="st st2">Hecho</span></td><td>El SII se envía desde BC (DvImpuestos), igual que con el Laravel; las facturas a 0 también se envían. Sin solape gracias al corte y a la detección de preexistentes</td></tr>
+<tr><td>A3</td><td>Forma de pago CAJA</td><td>05/11/2026</td><td>Luis Huapaya</td><td><span class="st st2">Hecho</span></td><td>En producción está bien configurada. Las facturas sin cobro usan ALMEFECTIV</td></tr>
+<tr><td>A4</td><td>Aviso a contabilidad</td><td>05/11/2026</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>No registrarán ni borrarán borradores de Revo durante las pruebas</td></tr>
+<tr><td>A5</td><td>Cobros contra cliente pasarela</td><td>05/11/2026</td><td>Luis Huapaya</td><td><span class="st st2">Hecho</span></td><td>Decidido y probado en el sandbox (T17). El cliente creará los clientes pasarela en producción</td></tr>
+<tr><td>A6</td><td>Punto de restauración</td><td>05/11/2026 21:04 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>06/11/2026 02:04 UTC. Restaurar desde el centro de administración de BC a un momento anterior</td></tr>
+</tbody></table></div>
+<h2>B. Instalación en producción</h2>
+<p>La extensión se sube como archivo <code>.app</code> desde Administración de extensiones; a producción no se publica desde VS Code.</p>
+<div class="scroll"><table><thead><tr><th>#</th><th>Paso</th><th>Fecha y hora</th><th>Responsable</th><th>Estado</th><th>Notas</th></tr></thead><tbody>
+<tr><td>B1</td><td>Cargar <code>Ceroone_Revo TPV Integration_1.0.18.0.app</code> (Implementar en: Versión actual)</td><td>05/11/2026 21:18 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>Estado de instalación de extensión (Production): Revo TPV Integration · Ceroone · Cargar · Completado · 1.0.18.0 · 5/11/2026 21:18. Modo de esquema: Agregar (primera instalación). Posterior al punto de restauración (21:04)</td></tr>
+<tr><td>B2</td><td>Asignar el conjunto de permisos Integración Revo (<code>REVO INTEGRATION</code>)</td><td>05/11/2026 21:25 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>Asignado al usuario Ceroone (ceroone@gruporalsa.com), empresa Grupo Olé. Facturas Revo ya aparece en el buscador. Usuarios de contabilidad: se añadirán cuando se definan</td></tr>
+<tr><td>B3</td><td>Llamadas externas</td><td>05/11/2026 22:30 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>Probar conexión en la ficha GAL: "Conexión correcta. Facturas en la primera página: 100". Producción permite a la extensión llamar a Revo; DvImpuestos no se ha tocado</td></tr>
+</tbody></table></div>
+<h2>C. Configuración inicial</h2>
+<p>Se arranca con todo lo que escribe en BC desactivado y se activa por fases.</p>
+<h3>C0. Comparación sandbox ↔ producción (antes de aplicar el paquete)</h3>
+<p>El paquete solo copia la configuración de Revo; lo que referencia debe existir en producción y estar igual. <em>Validar paquete</em> detecta los códigos que faltan; lo de abajo se revisa a mano.</p>
+<div class="scroll"><table><thead><tr><th>#</th><th>Qué comprobar en producción</th><th>Fecha y hora</th><th>Estado</th><th>Resultado</th></tr></thead><tbody>
+<tr><td>C0.1</td><td>Secciones COBROS / ALM… con la misma contrapartida (ALMTARJET 4412890, ALMGLOVO 4412896, ALMSTRIPE 4412898, ALMEFECTIV 5700891)</td><td>05/11/2026 22:00 (Lima)</td><td><span class="st st2">Hecho</span></td><td>Excel de secciones de producción: ALMEFECTIV 5700891, ALMGLOVO 4412896, ALMSTRIPE 4412898 iguales. La de tarjeta en producción es ALMTARJETA (4412890), no ALMTARJET: se corrige en el paquete. ALMBIZUM, ALMCREDITO y ALMTRASNFE sin contrapartida: revisar con Luis</td></tr>
+<tr><td>C0.2</td><td>Formas de pago ALMEFECTIV, ALMTARJETA… sin cuenta de contrapartida</td><td>05/11/2026 22:45 (Lima)</td><td><span class="st st2">Hecho</span></td><td>Excel de formas de pago: las 15 ALM… (ALMEFECTIV, ALMTARJETA, ALMGLOVO, ALMSTRIPE…) sin cuenta de contrapartida, sin cartera ni efectos. CAJA mantiene 5700001 (no la usa la integración)</td></tr>
+<tr><td>C0.3</td><td>Series GALS, GALN, GALR con Nº manuales</td><td>05/11/2026 22:45 (Lima)</td><td><span class="st st2">Hecho</span></td><td>Existen GALS, GALN y GALR (y GALI, GALL, GALO, GALX), sin líneas de numeración: el nº lo pone Revo y la integración lo asigna como nº de registro</td></tr>
+<tr><td>C0.4</td><td>Productos 8_AL, 9_AL…: grupo IVA, UdM UDS, dimensiones 1S/2A/3C, no inventariable o servicio</td><td>05/11/2026 22:45 (Lima)</td><td><span class="st st2">Hecho</span></td><td>Los 12 productos _AL (7_AL a 17_AL) existen y son Fuera de inventario: no mueven stock. Grupos IVA validados con el paquete</td></tr>
+<tr><td>C0.5</td><td>Grupos IVA IVA4, IVA10, IVA21 y 0 % con su % en Configuración registro IVA</td><td>05/11/2026 22:00 (Lima)</td><td><span class="st st2">Hecho</span></td><td>Excel de Config. grupos registro IVA (NAC): IVA4 4 %, IVA10 10 %, IVA21 21 %, IVA0 0 %, tipo Normal. No existe IVA00: el grupo 0 % del paquete se cambia a IVA0. Confirmar con Luis si el 0 % de Revo va a IVA0 o a NO SUJETO (SII)</td></tr>
+<tr><td>C0.6</td><td>Cliente genérico X89000000 y clientes por letra</td><td>05/11/2026 22:50 (Lima)</td><td><span class="st st2">Hecho</span></td><td>Cliente genérico X89000000 en la ficha GAL. Letras: A, O, S factura simplificada; N factura nominal (exige NIF); R abono rectificativo; X abono nominal (exige NIF); I y L excluidas. Ninguna letra tiene cliente propio: sin NIF van al genérico</td></tr>
+<tr><td>C0.7</td><td>Permitir fecha IVA y Permitir registro cubren noviembre de 2026</td><td>05/11/2026 22:45 (Lima)</td><td><span class="st st2">Hecho</span></td><td>Permitir registro 01/01/2026–31/12/2026 y Permitir fecha de IVA 01/07/2026–31/12/2026: cubren noviembre de 2026; Uso fecha IVA habilitado</td></tr>
+<tr><td>C0.8</td><td>Validar paquete REVO-CONFIG en producción: 0 errores</td><td>05/11/2026 22:08 (Lima)</td><td><span class="st st2">Hecho</span></td><td>0 errores en las 5 tablas (1 / 1 / 8 / 12 / 25 registros) tras corregir el grupo IVA 0 % a IVA0 y la sección de las 3 líneas de tarjeta. La primera validación dio 4 errores (ver Incidencias)</td></tr>
+</tbody></table></div>
+<div class="scroll"><table><thead><tr><th>#</th><th>Dónde</th><th>Valor</th><th>Fecha y hora</th><th>Responsable</th><th>Estado</th><th>Notas</th></tr></thead><tbody>
+<tr><td>C1</td><td>Configuración Revo → Registrar automáticamente si cuadra</td><td>Desactivado hasta la fase 2</td><td>05/11/2026 22:25 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>Desactivado. Resto de Configuración Revo revisado: URL https://revoxef.works/api/external/v3/, página 100, timeout 120000 ms, 3 reintentos, prefijo IVA, grupo 0 % IVA0, UdM UDS, precio abono = total / cantidad, 1 día atrás, desfase 1, máx. 3 intentos</td></tr>
+<tr><td>C2</td><td>Configuración Revo → Crear clientes por NIF</td><td>Desactivado en fase 0; activar en fase 1</td><td>05/11/2026 22:25 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>Desactivado para la fase 0; plantilla de cliente vacía</td></tr>
+<tr><td>C3</td><td>Configuración Revo → Días de reintento de errores</td><td>7</td><td>05/11/2026 22:25 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>7 días</td></tr>
+<tr><td>C4</td><td>Tarea diaria</td><td>No crearla hasta la fase 2</td><td>05/11/2026 22:48 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>Movs. cola trabajo filtrado por Revo: sin tareas. No se crea hasta la fase 2; las pruebas se lanzan con Relanzar día</td></tr>
+<tr><td>C5</td><td>Paquete de configuración exportado del sandbox</td><td>Importar, validar y aplicar</td><td>05/11/2026 21:40 exportado · 22:20 aplicado (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>Aplicado en producción: 5 tablas, 0 errores, 47 registros insertados, 0 modificados (1 / 1 / 8 / 12 / 25). Excluidos Producto línea de ajuste, Última fecha sincronizada, Última ejecución y Cliente pasarela. Pendiente: sección ALMTARJETA en las 3 líneas de tarjeta (C7)</td></tr>
+<tr><td>C6</td><td>Ficha del centro GAL</td><td>Series GALS / GALN / GALR · dimensiones 3C = 089 y 1S = SRE2 · cliente genérico X89000000 · tokens de Revo</td><td>05/11/2026 22:30 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>Serie S cambiada de V-FAC+ (sandbox) a GALS; N GALN, R GALR; 3C = 089, 1S = SRE2; X89000000; CON; precios IVA incluido; activo. Tenant almudevar y tokens introducidos (cifrados, no se registran aquí). Probar conexión correcto</td></tr>
+<tr><td>C7</td><td>Mapeo métodos de pago</td><td>Sección de diario COBROS/ALM… y forma de pago por método</td><td>05/11/2026 22:35 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>25 métodos revisados, todos en plantilla COBROS. Sección ALMTARJETA asignada a Card America Express, Card VISA / Mastercard y Tarjeta. Transferencia cambiada a Omitir (como el Laravel). Omitidos: Crédito, Invitación, Transferencia, Transferencia Bancaria. Bizum se mantiene en ALMBIZUM (sin contrapartida) pendiente de Luis</td></tr>
+<tr><td>C8</td><td>Configuración de IVA y Configuración contabilidad</td><td>Permitir fecha IVA y Permitir registro cubren las fechas a probar</td><td>05/11/2026 22:50 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>Ver C0.7: registro e IVA permitidos hasta 31/12/2026</td></tr>
+<tr><td>C9</td><td>Productos <code>_AL</code></td><td>Dimensiones por defecto 1S, 2A y 3C</td><td>05/11/2026 22:51 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>8_AL: 1S = SRE2 (Carretera), 2A = A2101 (Comida), 3C = 089 (Almudevar R), registro Mismo código</td></tr>
+<tr><td>C10</td><td>Ficha GAL → Forma de pago sin cobros</td><td>ALMEFECTIV</td><td>05/11/2026 22:30 (Lima)</td><td>Omar Carreño</td><td><span class="st st2">Hecho</span></td><td>Sin contrapartida; usada por las facturas sin cobro (a 0)</td></tr>
+<tr><td>C11</td><td>Clientes pasarela + Mapeo métodos de pago → Cliente pasarela</td><td>Uno por pasarela, grupo contable a la 441</td><td></td><td>Cliente / Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td>Los crea el cliente; después se asignan a cada método</td></tr>
+<tr><td>C12</td><td>Ficha GAL → Producto línea de ajuste</td><td>Vacío hasta que el cliente lo indique</td><td>05/11/2026 22:30 (Lima)</td><td>Luis Huapaya</td><td><span class="st st2">Hecho</span></td><td>Mientras esté vacío, los tickets a 0 sin líneas quedan en error con aviso y se recuperan reprocesando</td></tr>
+</tbody></table></div>
+<h2>Fase 0: modo espejo</h2>
+<p>Se relanzan días anteriores al corte (p. ej. 02/11/2026 y 03/11/2026) que el Laravel ya procesó; la integración solo enlaza lo existente y no crea nada en BC.</p>
+<div class="scroll"><table><thead><tr><th>#</th><th>Prueba</th><th>Resultado esperado</th><th>Fecha y hora</th><th>Responsable</th><th>Estado</th><th>Resultado obtenido</th></tr></thead><tbody>
+<tr><td>F0.1</td><td>Relanzar día de una fecha ya procesada por el Laravel</td><td>Facturas en Creado con Documento preexistente = Sí; ningún borrador nuevo</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F0.2</td><td>Cobros de esas facturas</td><td>Estado Omitido; ninguna línea de diario</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F0.3</td><td>Registro de sincronizaciones</td><td>Una línea por día con el nº de facturas y el importe de Revo</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F0.4</td><td>Comparar con el Laravel</td><td>Mismo nº de facturas e importe del día en BC</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F0.5</td><td>Ventas → Facturas venta (borradores)</td><td>Ningún borrador nuevo</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+</tbody></table></div>
+<h2>Fase 1: solo borradores</h2>
+<p>Desde la fecha de corte (04/11/2026) la integración crea los borradores y las líneas de cobro sin registrar. Se activa Crear clientes por NIF (C2).</p>
+<div class="scroll"><table><thead><tr><th>#</th><th>Funcionalidad</th><th>Qué comprobar</th><th>Fecha y hora</th><th>Responsable</th><th>Estado</th><th>Resultado obtenido</th></tr></thead><tbody>
+<tr><td>F1.1</td><td>Borrador de factura</td><td>Nº = nº de Revo · cliente genérico o por NIF · líneas con el producto de Revo en la descripción · forma de pago del cobro · Hora Factura · dimensiones</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F1.2</td><td>Abono (letras R y X)</td><td>Se crea como abono con precios positivos</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F1.3</td><td>Excluidas (I, L)</td><td>Estado Excluido: no se crean salvo Forzar subida</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F1.4</td><td>Cliente por NIF</td><td>Cliente nuevo con nº = NIF y Cliente creado = Sí</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F1.5</td><td>Supergrupo sin mapear</td><td>Con error, el mensaje dice cuál</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F1.6</td><td>Cobros</td><td>Línea en la sección ALM… de su método, Liquida a = la factura, sin registrar; con cliente pasarela, segunda línea a la pasarela</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F1.7</td><td>Las tres diferencias</td><td>Dif. pagos, Dif. líneas y Dif. vs BC a 0 en las que cuadran; en rojo las que no</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F1.8</td><td>Vistas</td><td>Pendientes por subir, Con error e Incidencia de pagos muestran los casos esperados</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F1.9</td><td>Ticket a 0 sin líneas</td><td>Con producto de ajuste configurado: se crea con 1 línea a 0; sin él: error con aviso</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+</tbody></table></div>
+<h2>Fase 2: registro</h2>
+<p>La integración registra las facturas que cuadran con Revo y se envían al SII desde BC. Se activa el registro automático (C1) y la tarea diaria (C4).</p>
+<div class="scroll"><table><thead><tr><th>#</th><th>Funcionalidad</th><th>Qué comprobar</th><th>Fecha y hora</th><th>Responsable</th><th>Estado</th><th>Resultado obtenido</th></tr></thead><tbody>
+<tr><td>F2.1</td><td>Registrar si cuadra con 3–5 facturas</td><td>Pasan a Registrado; Hora Factura visible en el histórico</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F2.2</td><td>Factura que no cuadra</td><td>Queda en borrador con su Motivo sin registrar</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F2.3</td><td>Forzar registro</td><td>Se registra; quedan rellenos Registro forzado, Descuadre ignorado y Forzado por</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F2.4</td><td>Error de configuración</td><td>No se puede forzar; el motivo indica qué falta</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F2.5</td><td>Abono</td><td>Se registra; si sale el aviso del nº de factura corregida, se pulsa Sí</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F2.6</td><td>Envío al SII</td><td>En DvImpuestos la factura sale una sola vez</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F2.7</td><td>Modo automático</td><td>Activar Registrar automáticamente si cuadra → Relanzar día → se registran solas</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+<tr><td>F2.8</td><td>Tarea diaria</td><td>Crear tarea diaria y revisar al día siguiente el Registro de sincronizaciones</td><td></td><td>Omar Carreño</td><td><span class="st st0">Pendiente</span></td><td></td></tr>
+</tbody></table></div>
+<h2>Pendiente de decidir con Luis</h2>
+<p>Puntos abiertos para la sesión del 06/11/2026; ninguno bloquea la fase 0.</p>
+<div class="scroll"><table><thead><tr><th>#</th><th>Punto</th><th>Situación actual</th><th>Decisión de Luis</th><th>Estado</th></tr></thead><tbody>
+<tr><td>P1</td><td>Producto de la línea de ajuste (tickets a 0 sin líneas)</td><td>Campo vacío en GAL: esos tickets quedan en error con aviso hasta configurarlo (C12)</td><td></td><td><span class="st st0">Pendiente</span></td></tr>
+<tr><td>P2</td><td>Bizum: cuenta de contrapartida</td><td>Bizum crea línea en ALMBIZUM, que no tiene contrapartida en producción (C7). ¿Qué cuenta, u omitir?</td><td></td><td><span class="st st0">Pendiente</span></td></tr>
+<tr><td>P3</td><td>Líneas de Revo al 0 % de IVA</td><td>Van al grupo IVA0 (0 %, Normal). ¿IVA0 o NO SUJETO, de cara al SII? (C0.5)</td><td></td><td><span class="st st0">Pendiente</span></td></tr>
+<tr><td>P4</td><td>Letra O (offline)</td><td>Va a la serie S (GALS), como el Laravel; en producción existe la serie GALO. ¿GALO o GALS?</td><td></td><td><span class="st st0">Pendiente</span></td></tr>
+<tr><td>P5</td><td>Numeración de los cobros (H2)</td><td>La serie DIAG-CBRO repite el nº de documento en los cobros de una sección. ¿Renumerar o un nº por cobro?</td><td></td><td><span class="st st0">Pendiente</span></td></tr>
+<tr><td>P6</td><td>Clientes pasarela</td><td>Pendientes de crear por el cliente (C11); hasta entonces el cobro va contra la contrapartida de la sección</td><td></td><td><span class="st st0">Pendiente</span></td></tr>
+</tbody></table></div>
+<h2>Incidencias y decisiones</h2>
+<div class="scroll"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Decisión / acción</th><th>Responsable</th></tr></thead><tbody>
+<tr><td>05/11/2026</td><td>Decisión</td><td>Versión a instalar</td><td>1.0.18.0, tras probar en el sandbox T21–T25 (borrar borradores sin documento vacío, tickets a 0 sin líneas, forzar subida con línea de ajuste)</td><td>Omar Carreño</td></tr>
+<tr><td>05/11/2026</td><td>Corrección de la guía</td><td>El paso B3 de la guía decía bloquear DvImpuestos</td><td>Solo aplica al sandbox; en producción no se toca</td><td>Omar Carreño</td></tr>
+<tr><td>05/11/2026</td><td><span class="st st0">Pendiente</span></td><td>Producto de la línea de ajuste</td><td>Luis lo consulta con el cliente</td><td>Luis Huapaya</td></tr>
+<tr><td>05/11/2026</td><td><span class="st st0">Pendiente</span></td><td>H2: la serie DIAG-CBRO repite el nº de documento en los cobros de una sección</td><td>Decidir con contabilidad si se renumera o si cada cobro lleva su propio nº</td><td>Luis Huapaya</td></tr>
+<tr><td>05/11/2026 21:45</td><td>Incidencia</td><td>El paquete REVO-CONFIG importado en producción incluía las tablas de configuración de BC (8610–8622…), con 5 registros del sandbox en 8620 Config. Tmpl. Selection Rules, porque en el sandbox Excluir tablas de configuración estaba desactivado</td><td>Borrar esas líneas del paquete en producción antes de validar; solo quedan las tablas 50400–50404. Borrar líneas del paquete no toca los datos reales de BC</td><td>Omar Carreño</td></tr>
+<tr><td>05/11/2026 22:00</td><td>Decisión</td><td>Validar paquete en producción: 4 errores. Configuración Revo con grupo IVA 0 % = IVA00 (no existe en producción) y 3 métodos de tarjeta con sección ALMTARJET (en producción se llama ALMTARJETA, misma cuenta 4412890)</td><td>Corregir los datos del paquete: IVA00 → IVA0 y ALMTARJET → ALMTARJETA. Revalidar hasta 0 errores antes de aplicar</td><td>Omar Carreño</td></tr>
+<tr><td>05/11/2026 22:00</td><td><span class="st st0">Pendiente</span></td><td>Las secciones ALMBIZUM, ALMCREDITO y ALMTRASNFE no tienen cuenta de contrapartida en producción; y falta confirmar si las líneas de Revo al 0 % van a IVA0 o a NO SUJETO</td><td>Revisar con Luis / contabilidad. No bloquea la fase 0</td><td>Luis Huapaya</td></tr>
+<tr><td>05/11/2026 22:15</td><td>Incidencia</td><td>Al corregir en el paquete la sección de las 3 líneas de tarjeta a ALMTARJETA, el editor de paquetes responde "El valor de Sección diario 'ALMTARJETA' no existe", aunque la sección figura en el Excel de producción. Grupo IVA 0 % ya corregido a IVA0 (50400 sin errores)</td><td>Dejar la sección vacía en esas 3 líneas, aplicar el paquete y asignar ALMTARJETA desde Mapeo métodos de pago del centro GAL (lookup filtrado por COBROS). Así se conservan los nombres exactos de los métodos Revo</td><td>Omar Carreño</td></tr>
+<tr><td>05/11/2026 22:35</td><td>Decisión</td><td>En el mapeo importado, el método Transferencia estaba como Crear línea diario (sección ALMTRASNFE, sin contrapartida); el Laravel omitía Transferencia, Transferencia Bancaria y Crédito</td><td>Transferencia cambiada a Omitir en producción. Bizum se deja en Crear línea diario (ALMBIZUM) hasta que Luis confirme su contrapartida</td><td>Omar Carreño</td></tr>
+<tr><td>05/11/2026 22:54</td><td>Decisión</td><td>Fases A, B y C terminadas. Desde la fase 0 la integración ya procesa datos reales de Revo en producción</td><td>Las fases 0, 1 y 2 se hacen en sesión con Luis supervisando, a partir del 06/11/2026. Se le envía el registro y los puntos pendientes de decidir</td><td>Omar Carreño</td></tr>
+</tbody></table></div>
+<footer>Actualizado el 06/11/2026 10:47 (hora local).</footer>
+</main>
+</body>
+</html>

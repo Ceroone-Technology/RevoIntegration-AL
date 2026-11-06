@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vista previa Revo</title>
+<style>
+:root {
+  --bg: #f3f2f1; --surface: #ffffff; --surface-2: #faf9f8; --border: #e1dfdd; --border-strong: #c8c6c4;
+  --text: #201f1e; --text-2: #605e5c; --text-3: #8a8886;
+  --accent: #00706e; --accent-hover: #005a58; --accent-soft: #e6f2f1;
+  --bar: #24282d; --bar-text: #ffffff; --row-sel: #e6f2f1; --row-hover: #f3f2f1;
+  --fav: #107c10; --unfav: #a4262c; --sub: #8a8886; --warn-bg: #fff4ce;
+  --preview: #fff8e1; --preview-border: #f0d78c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1a19; --surface: #252423; --surface-2: #2d2c2b; --border: #3b3a39; --border-strong: #605e5c;
+    --text: #f3f2f1; --text-2: #c8c6c4; --text-3: #a19f9d;
+    --accent: #3fb6b2; --accent-hover: #63c7c3; --accent-soft: #1f3a39;
+    --bar: #111214; --row-sel: #1f3a39; --row-hover: #2d2c2b;
+    --fav: #6ccb5f; --unfav: #f1707b; --sub: #a19f9d; --warn-bg: #433519;
+    --preview: #2e2a1c; --preview-border: #6b5b2a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1b1a19; --surface: #252423; --surface-2: #2d2c2b; --border: #3b3a39; --border-strong: #605e5c;
+  --text: #f3f2f1; --text-2: #c8c6c4; --text-3: #a19f9d;
+  --accent: #3fb6b2; --accent-hover: #63c7c3; --accent-soft: #1f3a39;
+  --bar: #111214; --row-sel: #1f3a39; --row-hover: #2d2c2b;
+  --fav: #6ccb5f; --unfav: #f1707b; --sub: #a19f9d; --warn-bg: #433519;
+  --preview: #2e2a1c; --preview-border: #6b5b2a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 14px/1.4 "Segoe UI", system-ui, -apple-system, sans-serif; }
+button { font: inherit; color: inherit; }
+
+.preview { background: var(--preview); border-bottom: 1px solid var(--preview-border); padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 13px; }
+.preview strong { margin-right: 6px; }
+.preview button { background: transparent; border: 1px solid var(--preview-border); border-radius: 12px; padding: 2px 10px; cursor: pointer; }
+.preview button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.preview .note { color: var(--text-2); margin-left: auto; }
+
+.appbar { background: var(--bar); color: var(--bar-text); height: 44px; display: flex; align-items: center; padding: 0 16px; gap: 16px; font-size: 14px; }
+.appbar .company { font-weight: 600; }
+.appbar .search { margin-left: auto; opacity: .75; font-size: 13px; }
+.appbar .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; font-size: 12px; font-weight: 600; }
+
+.page { max-width: 1400px; margin: 16px auto; padding: 0 16px; }
+.frame { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.06); min-height: 70vh; display: flex; flex-direction: column; }
+.head { padding: 14px 20px 0; display: flex; align-items: center; gap: 10px; }
+.back { border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--text-2); padding: 2px 6px; border-radius: 4px; }
+.back:hover { background: var(--row-hover); }
+.head .kind { font-size: 12px; color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; }
+.head h1 { font-size: 22px; font-weight: 600; margin: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 2px; padding: 10px 14px; border-bottom: 1px solid var(--border); position: relative; }
+.act { border: 0; background: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.act:hover { background: var(--row-hover); }
+.act .ic { color: var(--accent); font-size: 15px; width: 16px; text-align: center; }
+.act.menu::after { content: "▾"; font-size: 11px; color: var(--text-2); }
+.act.sep { border-left: 1px solid var(--border); border-radius: 0; margin-left: 4px; padding-left: 12px; }
+.drop { position: absolute; z-index: 20; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,.15); padding: 4px 0; min-width: 240px; }
+.drop button { display: flex; width: 100%; text-align: left; border: 0; background: none; padding: 7px 14px; cursor: pointer; gap: 8px; }
+.drop button:hover { background: var(--row-hover); }
+.drop small { display: block; color: var(--text-2); font-size: 12px; }
+
+.body { display: flex; flex: 1; min-height: 0; }
+.main { flex: 1; min-width: 0; padding: 12px 20px 24px; }
+.factbox { width: 300px; border-left: 1px solid var(--border); padding: 12px 16px; background: var(--surface-2); }
+.factbox h3 { font-size: 14px; margin: 4px 0 10px; }
+.factbox .fb-label { font-size: 12px; color: var(--text-2); margin-top: 10px; }
+.factbox .fb-val { white-space: pre-wrap; word-break: break-word; font-size: 13px; }
+
+.grid-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 4px; }
+table.grid { border-collapse: collapse; width: 100%; font-size: 13px; }
+.grid th { text-align: left; font-weight: 600; color: var(--text-2); padding: 7px 10px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; background: var(--surface); position: sticky; top: 0; cursor: help; }
+.grid th.num, .grid td.num { text-align: right; }
+.grid td { padding: 6px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; max-width: 340px; overflow: hidden; text-overflow: ellipsis; }
+.grid tr:hover td { background: var(--row-hover); }
+.grid tr.sel td { background: var(--row-sel); }
+.grid td.sel-cell { width: 6px; padding: 0; }
+.grid tr.sel td.sel-cell { background: var(--accent); }
+.grid a, .link { color: var(--accent); text-decoration: none; cursor: pointer; font-weight: 600; }
+.grid a:hover, .link:hover { text-decoration: underline; }
+.grid input[type=text] { border: 1px solid transparent; background: transparent; font: inherit; color: inherit; width: 100%; padding: 2px 4px; }
+.grid input[type=text]:hover, .grid input[type=text]:focus { border-color: var(--border-strong); background: var(--surface); outline: none; }
+.chk { accent-color: var(--accent); width: 15px; height: 15px; vertical-align: middle; }
+.Favorable { color: var(--fav); font-weight: 600; }
+.Unfavorable { color: var(--unfav); font-weight: 600; }
+.Subordinate { color: var(--sub); }
+
+.part { margin-top: 18px; }
+.part h2 { font-size: 15px; margin: 0 0 8px; font-weight: 600; }
+
+.fasttab { border-bottom: 1px solid var(--border); padding: 4px 0 14px; }
+.fasttab > header { display: flex; align-items: baseline; gap: 12px; cursor: pointer; padding: 10px 0 6px; user-select: none; }
+.fasttab > header h2 { font-size: 16px; font-weight: 600; margin: 0; }
+.fasttab > header .chev { color: var(--text-2); font-size: 12px; transition: transform .15s; }
+.fasttab.closed > header .chev { transform: rotate(-90deg); }
+.fasttab > header .summary { color: var(--text-2); font-size: 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; display: none; }
+.fasttab.closed > header .summary { display: block; }
+.fasttab.closed .fields, .fasttab.closed .part-inner { display: none; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; row-gap: 2px; }
+.fld { display: flex; align-items: center; min-height: 32px; gap: 8px; }
+.fld label { flex: 0 0 44%; color: var(--text); display: flex; align-items: center; gap: 4px; cursor: help; overflow: hidden; }
+.fld label span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fld label::after { content: ""; flex: 1; border-bottom: 1px dotted var(--border-strong); margin: 0 4px; transform: translateY(4px); min-width: 8px; }
+.fld .ctl { flex: 1; min-width: 0; }
+.fld input[type=text], .fld input[type=password], .fld select, .dialog input, .dialog select { width: 100%; border: 0; border-bottom: 1px solid var(--border-strong); background: transparent; color: inherit; font: inherit; padding: 4px 2px; }
+.fld input:focus, .fld select:focus { outline: none; border-bottom: 2px solid var(--accent); }
+.fld input[readonly] { border-bottom-color: transparent; color: var(--text-2); }
+.fld select option { color: #201f1e; }
+.toggle { position: relative; width: 40px; height: 20px; display: inline-block; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle i { position: absolute; inset: 0; border-radius: 10px; border: 1px solid var(--text-2); cursor: pointer; transition: .15s; }
+.toggle i::after { content: ""; position: absolute; width: 12px; height: 12px; left: 3px; top: 3px; border-radius: 50%; background: var(--text-2); transition: .15s; }
+.toggle input:checked + i { background: var(--accent); border-color: var(--accent); }
+.toggle input:checked + i::after { left: 23px; background: #fff; }
+
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.dialog { background: var(--surface); border-radius: 6px; box-shadow: 0 12px 40px rgba(0,0,0,.3); width: 100%; max-width: 480px; }
+.dialog h2 { font-size: 18px; margin: 0; padding: 18px 22px 6px; }
+.dialog .dbody { padding: 10px 22px 6px; }
+.dialog .dbody .fld label { flex-basis: 50%; }
+.dialog footer { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 22px 18px; }
+.btn { border: 1px solid var(--border-strong); background: var(--surface); padding: 6px 18px; border-radius: 4px; cursor: pointer; min-width: 80px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn:hover { filter: brightness(.96); }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--bar); color: #fff; padding: 10px 18px; border-radius: 4px; z-index: 60; font-size: 13px; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.hint { font-size: 12px; color: var(--text-2); margin: 8px 0 0; }
+
+@media (max-width: 900px) {
+  .fields { grid-template-columns: 1fr; }
+  .factbox { display: none; }
+  .appbar .search { display: none; }
+  .preview .note { margin-left: 0; }
+}
+@media (max-width: 520px) {
+  .fld { flex-direction: column; align-items: stretch; gap: 0; min-height: 0; padding: 4px 0; }
+  .fld label { flex-basis: auto; }
+  .fld label::after { display: none; }
+  .main { padding: 10px 12px 20px; }
+  .head { padding: 12px 12px 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="preview" id="preview"></div>
+
+<div class="appbar">
+  <span class="company">Grupo Olé · CRONUS ES (Sandbox)</span>
+  <span class="search">🔍 Dígame qué desea hacer</span>
+  <span class="avatar">OC</span>
+</div>
+
+<div class="page"><div class="frame" id="frame"></div></div>
+
+<script>
+/* ---------- Metadatos de campos (captions y tooltips tal y como están en el AL) ---------- */
+const F = {
+  center: {
+    Code: ['Código', 'Especifica el código del centro (local) Revo.'],
+    Name: ['Nombre', 'Especifica el nombre descriptivo del centro.'],
+    Enabled: ['Activo', 'Especifica si el centro se incluye en la sincronización automática.', 'bool'],
+    RevoTenant: ['Tenant Revo', 'Especifica el tenant (cuenta) de Revo asociado al centro.'],
+    GenericCustomer: ['Cliente genérico', 'Especifica el cliente BC que se usa en los documentos sin cliente identificado por NIF.', 'lookup'],
+    PaymentTerms: ['Términos de pago', 'Especifica los términos de pago que se asignan a los documentos de venta creados.', 'lookup'],
+    Location: ['Almacén', 'Especifica el almacén que se asigna a los documentos de venta creados.', 'lookup'],
+    PricesInclVAT: ['Precios IVA incluido', 'Especifica si los documentos de venta se crean con precios IVA incluido.', 'bool'],
+    DimCode: ['Código dimensión', 'Especifica la dimensión que identifica al centro en los documentos y diarios.', 'lookup'],
+    DimValue: ['Valor dimensión', 'Especifica el valor de dimensión del centro que se asigna a documentos y diarios.', 'lookup'],
+    SimplifiedNos: ['Serie S (simplificadas)', 'Especifica la serie numérica para las facturas simplificadas (serie S).', 'lookup'],
+    NominalNos: ['Serie N (nominales)', 'Especifica la serie numérica para las facturas nominales (serie N).', 'lookup'],
+    RectifyingNos: ['Serie R (rectificativas)', 'Especifica la serie numérica para las facturas rectificativas (serie R).', 'lookup'],
+    DefaultSG: ['Supergrupo por defecto (sin supergrupo)', 'Especifica el supergrupo Revo que se aplica a las líneas que llegan sin supergrupo.', 'int'],
+    LastSyncDate: ['Última fecha sincronizada', 'Especifica la última fecha de facturación sincronizada para el centro.', 'ro'],
+    LastSyncAt: ['Última ejecución', 'Especifica la fecha y hora de la última ejecución de la sincronización.', 'ro'],
+  },
+  letter: {
+    Letter: ['Letra', 'Especifica la letra del prefijo del número de factura Revo.'],
+    Description: ['Descripción', 'Especifica una descripción de la letra de prefijo.'],
+    Kind: ['Tipo documento', 'Especifica si la letra genera factura, abono o se excluye de la integración.', 'enum', ['Factura', 'Abono', 'Excluido']],
+    Series: ['Serie', 'Especifica la serie numérica BC (S, N o R) que se usa para esta letra.', 'enum', ['S - Simplificada', 'N - Nominal', 'R - Rectificativa']],
+    Customer: ['Cliente por tipo documento', 'Especifica el cliente BC para esta letra. Si está vacío se usa el cliente genérico del centro.'],
+    RequireNIF: ['Exigir cliente por NIF', 'Especifica si el documento debe asignarse a un cliente BC localizado por el NIF de la factura.', 'bool'],
+  },
+  setup: {
+    ApiUrl: ['URL base API Revo', 'Especifica la URL base de la API externa de Revo.'],
+    PageSize: ['Tamaño de página', 'Especifica el número de registros por página en las llamadas a la API (máximo 100).', 'int'],
+    Timeout: ['Timeout HTTP (ms)', 'Especifica el tiempo máximo de espera de cada llamada HTTP, en milisegundos.', 'int'],
+    Retries: ['Reintentos HTTP', 'Especifica el número de reintentos ante errores transitorios de la API.', 'int'],
+    VatPrefix: ['Prefijo grupo IVA producto', 'Especifica el prefijo de los grupos de IVA producto (prefijo + % IVA, p. ej. IVA10).'],
+    ZeroVat: ['Grupo IVA producto 0%', 'Especifica el grupo de IVA producto para las líneas con IVA 0%.', 'lookup'],
+    UoM: ['Unidad de medida', 'Especifica la unidad de medida de las líneas de venta creadas.', 'lookup'],
+    CrMemoPrice: ['Precio abono = total / cantidad', 'Especifica si el precio de las líneas de abono se calcula como total / cantidad.', 'bool'],
+    DaysBack: ['Días hacia atrás a sincronizar', 'Especifica cuántos días hacia atrás importa la tarea diaria.', 'int'],
+    EndOffset: ['Desfase fecha fin (días)', 'Especifica los días que se suman a la fecha fin del rango consultado a Revo.', 'int'],
+    MaxAttempts: ['Máx. intentos automáticos', 'Especifica el número máximo de intentos automáticos antes de dejar un documento en error.', 'int'],
+  },
+  sg: {
+    Center: ['Centro', 'Especifica el centro Revo al que aplica el mapeo.'],
+    SGId: ['ID supergrupo Revo', 'Especifica el ID del supergrupo Revo.', 'int'],
+    Description: ['Descripción', 'Especifica una descripción del supergrupo.'],
+    SpecificVAT: ['Solo para % IVA', 'Especifica si el mapeo aplica solo a las líneas con el % de IVA indicado.', 'bool'],
+    VAT: ['% IVA', 'Especifica el % de IVA al que aplica el mapeo cuando es específico por IVA.', 'num'],
+    Item: ['Producto BC', 'Especifica el producto BC que se usa en las líneas de venta de este supergrupo.'],
+    KeepSign: ['Mantener signo del precio', 'Especifica si se mantiene el signo del precio de Revo (p. ej. descuentos en negativo).', 'bool'],
+  },
+  pm: {
+    Center: ['Centro', 'Especifica el centro Revo al que aplica el mapeo.'],
+    Method: ['Método de pago Revo', 'Especifica el nombre del método de pago tal y como llega de Revo.'],
+    Action: ['Acción', 'Especifica si los pagos con este método generan línea de diario de cobro o se omiten.', 'enum', ['Crear línea diario', 'Omitir']],
+    Template: ['Plantilla diario', 'Especifica la plantilla de diario general donde se crean los cobros.'],
+    Batch: ['Sección diario', 'Especifica la sección de diario general donde se crean los cobros.'],
+    PayMethod: ['Forma de pago BC', 'Especifica la forma de pago BC que se asigna a la línea de cobro.'],
+  },
+  inv: {
+    EntryNo: ['Nº mov.', 'Especifica el número de movimiento de la factura importada.', 'int'],
+    Center: ['Centro', 'Especifica el centro Revo de la factura.'],
+    InvNo: ['Nº factura Revo', 'Especifica el número de factura en Revo.'],
+    Order: ['Pedido Revo', 'Especifica el pedido Revo al que pertenece la factura.'],
+    Letter: ['Letra prefijo', 'Especifica la letra de prefijo del número de factura, que determina el tipo de documento.'],
+    Kind: ['Tipo documento', 'Especifica si la factura genera factura, abono o queda excluida.'],
+    Date: ['Fecha factura', 'Especifica la fecha de la factura en Revo.'],
+    Time: ['Hora factura', 'Especifica la hora de la factura en Revo.'],
+    NIF: ['NIF', 'Especifica el NIF del cliente informado en Revo.'],
+    CustName: ['Nombre cliente', 'Especifica el nombre del cliente informado en Revo.'],
+    Total: ['Total', 'Especifica el importe total de la factura en Revo.', 'num'],
+    Discount: ['Descuento', 'Especifica el importe de descuento de la factura.', 'num'],
+    Expected: ['Líneas esperadas', 'Especifica el número de líneas que indica Revo para la factura.', 'int'],
+    Imported: ['Líneas importadas', 'Especifica el número de líneas importadas. Si no coincide con las esperadas, la factura no se procesa.', 'int'],
+    Status: ['Estado', 'Especifica el estado de procesamiento de la factura.'],
+    Error: ['Mensaje de error', 'Especifica el último error de procesamiento.'],
+    Attempts: ['Intentos', 'Especifica el número de intentos de procesamiento.', 'int'],
+    SalesType: ['Tipo documento venta', 'Especifica el tipo del documento de venta creado en BC.'],
+    SalesNo: ['Nº documento venta', 'Especifica el número del documento de venta borrador creado en BC.'],
+    CustNo: ['Cliente BC', 'Especifica el cliente BC asignado al documento.'],
+    PendingPay: ['Pagos pendientes', 'Especifica el número de pagos de la factura pendientes o en error.', 'int'],
+    PreExisting: ['Documento preexistente en BC', 'Especifica si ya existía en BC un documento para esta factura antes de procesarla.', 'bool'],
+    Modified: ['Modificada en Revo tras crear', 'Especifica si la factura cambió en Revo después de crear el documento en BC.', 'bool'],
+    ProcessedAt: ['Procesada el', 'Especifica la fecha y hora en que se creó el documento de venta.'],
+  },
+  line: {
+    LineId: ['ID línea Revo', 'Especifica el ID de la línea en Revo.'],
+    ItemName: ['Artículo Revo', 'Especifica el nombre del artículo en Revo.'],
+    SG: ['ID supergrupo', 'Especifica el supergrupo Revo del artículo, que determina el producto BC.', 'int'],
+    Qty: ['Cantidad', 'Especifica la cantidad de la línea.', 'num'],
+    Price: ['Precio', 'Especifica el precio unitario en Revo.', 'num'],
+    Disc: ['Importe descuento', 'Especifica el importe de descuento de la línea.', 'num'],
+    VAT: ['% IVA', 'Especifica el % de IVA de la línea.', 'num'],
+    Total: ['Total', 'Especifica el importe total de la línea en Revo.', 'num'],
+    Item: ['Producto BC asignado', 'Especifica el producto BC asignado a la línea según el mapeo de supergrupos.'],
+    SalesLine: ['Nº línea venta', 'Especifica el número de línea del documento de venta creado.', 'int'],
+  },
+  pay: {
+    EntryNo: ['Nº mov.', 'Especifica el número de movimiento del pago importado.', 'int'],
+    Center: ['Centro', 'Especifica el centro Revo del pago.'],
+    Header: ['Nº mov. factura', 'Especifica el número de movimiento de la factura Revo del pago.', 'int'],
+    Date: ['Fecha pago', 'Especifica la fecha del pago en Revo.'],
+    Time: ['Hora pago', 'Especifica la hora del pago en Revo.'],
+    Method: ['Método de pago Revo', 'Especifica el método de pago tal y como llega de Revo.'],
+    Amount: ['Importe', 'Especifica el importe cobrado.', 'num'],
+    Tip: ['Propina', 'Especifica el importe de propina del pago.', 'num'],
+    Cashier: ['Caja', 'Especifica la caja Revo donde se registró el pago.'],
+    Status: ['Estado', 'Especifica el estado de procesamiento del pago.'],
+    Error: ['Mensaje', 'Especifica el último error de procesamiento del pago.'],
+    Attempts: ['Intentos', 'Especifica el número de intentos de procesamiento.', 'int'],
+    Template: ['Plantilla diario', 'Especifica la plantilla de diario donde se creó la línea de cobro.'],
+    Batch: ['Sección diario', 'Especifica la sección de diario donde se creó la línea de cobro.'],
+    JnlLine: ['Nº línea diario', 'Especifica el número de la línea de diario de cobro creada.', 'int'],
+  },
+  log: {
+    EntryNo: ['Nº mov.', 'Especifica el número de movimiento del log.', 'int'],
+    LoggedAt: ['Fecha/hora', 'Especifica la fecha y hora en que se registró el error.'],
+    Center: ['Centro', 'Especifica el centro Revo donde se produjo el error.'],
+    Area: ['Área', 'Especifica el proceso donde se produjo el error (importación, documento, pago o tarea).'],
+    DocDate: ['Fecha documento', 'Especifica la fecha del documento Revo afectado.'],
+    InvNo: ['Nº factura Revo', 'Especifica el número de factura Revo afectada.'],
+    Message: ['Mensaje', 'Especifica el mensaje de error.'],
+    CallStack: ['Pila de llamadas', 'Especifica la pila de llamadas en el momento del error.'],
+    User: ['Usuario', 'Especifica el usuario que ejecutaba el proceso.'],
+  },
+};
+
+/* ---------- Datos de ejemplo (ficticios) ---------- */
+const D = {
+  setup: { ApiUrl: 'https://revoxef.works/api/external/v3/', PageSize: 100, Timeout: 120000, Retries: 3, VatPrefix: 'IVA', ZeroVat: 'IVA00', UoM: 'UDS', CrMemoPrice: true, DaysBack: 1, EndOffset: 1, MaxAttempts: 3 },
+  centers: [
+    { Code: 'OLE01', Name: 'Olé Centro', Enabled: true, RevoTenant: 'olecentro', GenericCustomer: 'CTPV-OLE01', PaymentTerms: 'CONTADO', Location: 'CENTRO', PricesInclVAT: true, DimCode: 'CENTRO', DimValue: 'OLE01', SimplifiedNos: 'VFS-OLE01', NominalNos: 'VFN-OLE01', RectifyingNos: 'VFR-OLE01', DefaultSG: 8, LastSyncDate: '01/10/2026', LastSyncAt: '02/10/2026 3:00' },
+    { Code: 'OLE02', Name: 'Olé Playa', Enabled: true, RevoTenant: 'oleplaya', GenericCustomer: 'CTPV-OLE02', PaymentTerms: 'CONTADO', Location: 'PLAYA', PricesInclVAT: true, DimCode: 'CENTRO', DimValue: 'OLE02', SimplifiedNos: 'VFS-OLE02', NominalNos: 'VFN-OLE02', RectifyingNos: 'VFR-OLE02', DefaultSG: 8, LastSyncDate: '01/10/2026', LastSyncAt: '02/10/2026 3:02' },
+    { Code: 'OLE03', Name: 'Olé Aeropuerto', Enabled: false, RevoTenant: 'oleaeropuerto', GenericCustomer: 'CTPV-OLE03', PaymentTerms: 'CONTADO', Location: 'AEROP', PricesInclVAT: true, DimCode: 'CENTRO', DimValue: 'OLE03', SimplifiedNos: 'VFS-OLE03', NominalNos: 'VFN-OLE03', RectifyingNos: 'VFR-OLE03', DefaultSG: 8, LastSyncDate: '15/09/2026', LastSyncAt: '16/09/2026 3:01' },
+  ],
+  letters: [
+    ['S', 'Factura simplificada', 0, 0, false], ['A', 'Factura agrupada', 0, 0, false], ['O', 'Offline', 0, 0, false],
+    ['N', 'Factura nominal', 0, 1, true], ['R', 'Rectificativa simplificada / devolución', 1, 2, false],
+    ['X', 'Rectificativa nominal', 1, 2, true], ['I', 'Invitaciones (excluido)', 2, 0, false], ['L', 'Albaranes (excluido)', 2, 0, false],
+  ].map(([Letter, Description, Kind, Series, RequireNIF]) => ({ Letter, Description, Kind, Series, Customer: '', RequireNIF })),
+  sg: [
+    { Center: 'OLE01', SGId: 1, Description: 'Comida', SpecificVAT: false, VAT: 0, Item: 'REVO-COMIDA', KeepSign: false },
+    { Center: 'OLE01', SGId: 2, Description: 'Bebida', SpecificVAT: true, VAT: 10, Item: 'REVO-BEBIDA10', KeepSign: false },
+    { Center: 'OLE01', SGId: 2, Description: 'Bebida alcohólica', SpecificVAT: true, VAT: 21, Item: 'REVO-BEBIDA21', KeepSign: false },
+    { Center: 'OLE01', SGId: 3, Description: 'Postres', SpecificVAT: false, VAT: 0, Item: 'REVO-POSTRE', KeepSign: false },
+    { Center: 'OLE01', SGId: 7, Description: 'Descuentos / promociones', SpecificVAT: false, VAT: 0, Item: 'REVO-DTO', KeepSign: true },
+    { Center: 'OLE01', SGId: 8, Description: 'Sin supergrupo', SpecificVAT: false, VAT: 0, Item: 'REVO-VARIOS', KeepSign: false },
+  ],
+  pm: [
+    { Center: 'OLE01', Method: 'Efectivo', Action: 0, Template: 'COBROS', Batch: 'OLE01-EF', PayMethod: 'EFECTIVO' },
+    { Center: 'OLE01', Method: 'Tarjeta', Action: 0, Template: 'COBROS', Batch: 'OLE01-TJ', PayMethod: 'TARJETA' },
+    { Center: 'OLE01', Method: 'Bizum', Action: 0, Template: 'COBROS', Batch: 'OLE01-BZ', PayMethod: 'BIZUM' },
+    { Center: 'OLE01', Method: 'Invitación', Action: 1, Template: '', Batch: '', PayMethod: '' },
+  ],
+  invoices: [
+    { EntryNo: 1048, Center: 'OLE01', InvNo: 'S-004512', Order: '88213', Letter: 'S', Kind: 'Factura', Date: '01/10/2026', Time: '13:42:10', NIF: '', CustName: '', Total: 48.60, Discount: 0, Expected: 4, Imported: 4, Status: 'Creado (borrador)', Error: '', Attempts: 1, SalesType: 'Factura', SalesNo: 'VFS-OLE01-00412', CustNo: 'CTPV-OLE01', PendingPay: 0, PreExisting: false, Modified: false, ProcessedAt: '02/10/2026 3:04' },
+    { EntryNo: 1047, Center: 'OLE01', InvNo: 'N-000231', Order: '88207', Letter: 'N', Kind: 'Factura', Date: '01/10/2026', Time: '14:15:33', NIF: 'B12345678', CustName: 'Eventos Levante S.L.', Total: 312.40, Discount: 15.00, Expected: 6, Imported: 6, Status: 'Error', Error: 'No existe ningún cliente con NIF B12345678 y la letra N exige cliente por NIF.', Attempts: 3, SalesType: '', SalesNo: '', CustNo: '', PendingPay: 2, PreExisting: false, Modified: false, ProcessedAt: '' },
+    { EntryNo: 1046, Center: 'OLE01', InvNo: 'S-004511', Order: '88201', Letter: 'S', Kind: 'Factura', Date: '01/10/2026', Time: '13:20:02', NIF: '', CustName: '', Total: 27.90, Discount: 0, Expected: 3, Imported: 2, Status: 'Pendiente', Error: '', Attempts: 0, SalesType: '', SalesNo: '', CustNo: '', PendingPay: 1, PreExisting: false, Modified: false, ProcessedAt: '' },
+    { EntryNo: 1045, Center: 'OLE01', InvNo: 'R-000044', Order: '88177', Letter: 'R', Kind: 'Abono', Date: '01/10/2026', Time: '12:58:47', NIF: '', CustName: '', Total: -12.50, Discount: 0, Expected: 1, Imported: 1, Status: 'Creado (borrador)', Error: '', Attempts: 1, SalesType: 'Abono', SalesNo: 'VFR-OLE01-00044', CustNo: 'CTPV-OLE01', PendingPay: 0, PreExisting: false, Modified: true, ProcessedAt: '02/10/2026 3:04' },
+    { EntryNo: 1044, Center: 'OLE01', InvNo: 'I-000019', Order: '88160', Letter: 'I', Kind: 'Excluido', Date: '01/10/2026', Time: '12:31:15', NIF: '', CustName: '', Total: 0, Discount: 0, Expected: 2, Imported: 2, Status: 'Excluido', Error: '', Attempts: 0, SalesType: '', SalesNo: '', CustNo: '', PendingPay: 0, PreExisting: false, Modified: false, ProcessedAt: '' },
+    { EntryNo: 1043, Center: 'OLE02', InvNo: 'S-007820', Order: '40112', Letter: 'S', Kind: 'Factura', Date: '01/10/2026', Time: '21:05:51', NIF: '', CustName: '', Total: 96.30, Discount: 4.50, Expected: 5, Imported: 5, Status: 'Error', Error: 'No existe mapeo de supergrupo 5 (IVA 10%) para el centro OLE02.', Attempts: 2, SalesType: '', SalesNo: '', CustNo: '', PendingPay: 2, PreExisting: false, Modified: false, ProcessedAt: '' },
+    { EntryNo: 1042, Center: 'OLE02', InvNo: 'S-007819', Order: '40109', Letter: 'S', Kind: 'Factura', Date: '01/10/2026', Time: '20:47:09', NIF: '', CustName: '', Total: 64.00, Discount: 0, Expected: 3, Imported: 3, Status: 'Creado (borrador)', Error: '', Attempts: 1, SalesType: 'Factura', SalesNo: 'VFS-OLE02-00981', CustNo: 'CTPV-OLE02', PendingPay: 0, PreExisting: true, Modified: false, ProcessedAt: '02/10/2026 3:05' },
+  ],
+  lines: {
+    1048: [['L1', 'Paella valenciana (2p)', 1, 1, 32.00, 0, 10, 32.00, 'REVO-COMIDA', 10000], ['L2', 'Agua mineral 1L', 2, 2, 2.80, 0, 10, 5.60, 'REVO-BEBIDA10', 20000], ['L3', 'Copa de vino tinto', 2, 2, 3.50, 0, 21, 7.00, 'REVO-BEBIDA21', 30000], ['L4', 'Café solo', 2, 2, 2.00, 0, 10, 4.00, 'REVO-BEBIDA10', 40000]],
+    1047: [['L1', 'Menú grupo', 1, 12, 22.00, 15.00, 10, 249.00, '', 0], ['L2', 'Botella de cava', 2, 3, 18.00, 0, 21, 54.00, '', 0], ['L3', 'Agua mineral 1L', 2, 3, 2.80, 0, 10, 8.40, '', 0], ['L4', 'Tarta cumpleaños', 3, 1, 0, 0, 10, 0, '', 0], ['L5', 'Suplemento terraza', 8, 1, 1.00, 0, 10, 1.00, '', 0], ['L6', 'Pan', 1, 0, 0, 0, 10, 0, '', 0]],
+    1046: [['L1', 'Hamburguesa Olé', 1, 1, 14.50, 0, 10, 14.50, '', 0], ['L2', 'Cerveza caña', 2, 3, 2.80, 0, 21, 8.40, '', 0]],
+    1045: [['L1', 'Devolución tabla ibéricos', 1, -1, 12.50, 0, 10, -12.50, 'REVO-COMIDA', 10000]],
+    1044: [['L1', 'Chupito casa', 2, 2, 0, 0, 21, 0, '', 0], ['L2', 'Café solo', 2, 2, 0, 0, 10, 0, '', 0]],
+    1043: [['L1', 'Fritura de pescado', 1, 2, 16.00, 0, 10, 32.00, '', 0], ['L2', 'Sangría jarra', 2, 1, 18.00, 4.50, 21, 13.50, '', 0], ['L3', 'Helado artesano', 5, 3, 4.50, 0, 10, 13.50, '', 0], ['L4', 'Ensalada mixta', 1, 2, 9.90, 0, 10, 19.80, '', 0], ['L5', 'Refresco', 2, 6, 2.92, 0, 10, 17.50, '', 0]],
+    1042: [['L1', 'Pizza margarita', 1, 2, 12.00, 0, 10, 24.00, 'REVO-COMIDA', 10000], ['L2', 'Cerveza botella', 2, 4, 3.50, 0, 21, 14.00, 'REVO-BEBIDA21', 20000], ['L3', 'Tiramisú', 3, 4, 6.50, 0, 10, 26.00, 'REVO-POSTRE', 30000]],
+  },
+  payments: [
+    { EntryNo: 2210, Center: 'OLE01', Header: 1048, Date: '01/10/2026', Time: '13:44:02', Method: 'Tarjeta', Amount: 48.60, Tip: 2.00, Cashier: 'Caja 1', Status: 'Creado (diario)', Error: '', Attempts: 1, Template: 'COBROS', Batch: 'OLE01-TJ', JnlLine: 10000 },
+    { EntryNo: 2209, Center: 'OLE01', Header: 1047, Date: '01/10/2026', Time: '14:20:11', Method: 'Tarjeta', Amount: 200.00, Tip: 0, Cashier: 'Caja 1', Status: 'Pendiente', Error: '', Attempts: 0, Template: '', Batch: '', JnlLine: 0 },
+    { EntryNo: 2208, Center: 'OLE01', Header: 1047, Date: '01/10/2026', Time: '14:20:58', Method: 'Efectivo', Amount: 112.40, Tip: 0, Cashier: 'Caja 1', Status: 'Pendiente', Error: '', Attempts: 0, Template: '', Batch: '', JnlLine: 0 },
+    { EntryNo: 2207, Center: 'OLE01', Header: 1046, Date: '01/10/2026', Time: '13:21:40', Method: 'Bizum', Amount: 27.90, Tip: 0, Cashier: 'Caja 2', Status: 'Pendiente', Error: '', Attempts: 0, Template: '', Batch: '', JnlLine: 0 },
+    { EntryNo: 2206, Center: 'OLE01', Header: 1045, Date: '01/10/2026', Time: '12:59:30', Method: 'Efectivo', Amount: -12.50, Tip: 0, Cashier: 'Caja 1', Status: 'Creado (diario)', Error: '', Attempts: 1, Template: 'COBROS', Batch: 'OLE01-EF', JnlLine: 20000 },
+    { EntryNo: 2205, Center: 'OLE01', Header: 1044, Date: '01/10/2026', Time: '12:31:15', Method: 'Invitación', Amount: 0, Tip: 0, Cashier: 'Caja 2', Status: 'Omitido', Error: '', Attempts: 0, Template: '', Batch: '', JnlLine: 0 },
+    { EntryNo: 2204, Center: 'OLE02', Header: 1043, Date: '01/10/2026', Time: '21:07:12', Method: 'Tarjeta', Amount: 96.30, Tip: 5.00, Cashier: 'Barra', Status: 'Error', Error: 'La factura 1043 no tiene documento de venta creado.', Attempts: 2, Template: '', Batch: '', JnlLine: 0 },
+    { EntryNo: 2203, Center: 'OLE02', Header: 1043, Date: '01/10/2026', Time: '21:07:40', Method: 'Amex', Amount: 0.01, Tip: 0, Cashier: 'Barra', Status: 'Error', Error: 'No existe mapeo para el método de pago "Amex" en el centro OLE02.', Attempts: 2, Template: '', Batch: '', JnlLine: 0 },
+    { EntryNo: 2202, Center: 'OLE02', Header: 1042, Date: '01/10/2026', Time: '20:49:01', Method: 'Efectivo', Amount: 64.00, Tip: 0, Cashier: 'Barra', Status: 'Creado (diario)', Error: '', Attempts: 1, Template: 'COBROS', Batch: 'OLE02-EF', JnlLine: 10000 },
+  ],
+  log: [
+    { EntryNo: 512, LoggedAt: '02/10/2026 3:05', Center: 'OLE02', Area: 'Pago', DocDate: '01/10/2026', InvNo: 'S-007820', Header: 1043, Message: 'No existe mapeo para el método de pago "Amex" en el centro OLE02.', CallStack: '"Revo Payment Builder"(CodeUnit 50408).GetMapping line 14\n"Revo Payment Builder"(CodeUnit 50408).CreatePaymentLine line 9\n"Revo Sync Orchestrator"(CodeUnit 50410).ProcessPayments line 22', User: 'ADMIN' },
+    { EntryNo: 511, LoggedAt: '02/10/2026 3:05', Center: 'OLE02', Area: 'Documento', DocDate: '01/10/2026', InvNo: 'S-007820', Header: 1043, Message: 'No existe mapeo de supergrupo 5 (IVA 10%) para el centro OLE02.', CallStack: '"Revo Document Builder"(CodeUnit 50406).ResolveItem line 18\n"Revo Document Builder"(CodeUnit 50406).CreateLines line 31\n"Revo Sync Orchestrator"(CodeUnit 50410).ProcessHeader line 12', User: 'ADMIN' },
+    { EntryNo: 510, LoggedAt: '02/10/2026 3:04', Center: 'OLE01', Area: 'Documento', DocDate: '01/10/2026', InvNo: 'N-000231', Header: 1047, Message: 'No existe ningún cliente con NIF B12345678 y la letra N exige cliente por NIF.', CallStack: '"Revo Document Builder"(CodeUnit 50406).ResolveCustomer line 25\n"Revo Document Builder"(CodeUnit 50406).CreateHeader line 8', User: 'ADMIN' },
+    { EntryNo: 509, LoggedAt: '02/10/2026 3:01', Center: 'OLE01', Area: 'Importación', DocDate: '01/10/2026', InvNo: 'S-004511', Header: 1046, Message: 'Líneas incompletas: esperadas 3, importadas 2. Se reintentará en la próxima ejecución.', CallStack: '"Revo Import"(CodeUnit 50405).CheckLines line 11', User: 'ADMIN' },
+    { EntryNo: 508, LoggedAt: '01/10/2026 3:00', Center: '', Area: 'Tarea', DocDate: '30/09/2026', InvNo: '', Header: 0, Message: 'La API Revo (reports/invoices) no respondió tras 3 intentos. Último estado: 503', CallStack: '"Revo API Client"(CodeUnit 50401).SendGet line 34\n"Revo Sync Job"(CodeUnit 50409).OnRun line 6', User: 'ADMIN' },
+  ],
+};
+
+/* ---------- Utilidades ---------- */
+const nf = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const meta = (t, k) => F[t][k];
+const fmt = (t, k, v) => {
+  const type = meta(t, k)[2];
+  if (type === 'bool') return `<input type="checkbox" class="chk" ${v ? 'checked' : ''} disabled>`;
+  if (type === 'num') return v === 0 || v === '' ? '' : nf.format(v);
+  if (type === 'int') return v === 0 ? '' : esc(v);
+  if (type === 'enum') return esc(meta(t, k)[3][v]);
+  return esc(v);
+};
+const STYLE = { 'Creado (borrador)': 'Favorable', 'Error': 'Unfavorable', 'Excluido': 'Subordinate' };
+
+const frame = document.getElementById('frame');
+let navStack = [];
+let state = { page: 'centers', sel: 0, center: 'OLE01', filter: null };
+
+function go(page, extra = {}, push = true) {
+  if (push) navStack.push({ ...state });
+  state = { page, sel: 0, filter: null, ...extra };
+  render();
+}
+function back() { if (navStack.length) { state = navStack.pop(); render(); } }
+
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2600);
+}
+
+/* ---------- Bloques de UI ---------- */
+function actionBar(groups) {
+  // groups: [{label, icon, run}] promoted, plus menus {menu:'Acciones', items:[...]}
+  return `<div class="actions">${groups.map((g, i) => g.menu
+    ? `<button class="act menu ${g.sep ? 'sep' : ''}" data-menu="${i}">${esc(g.menu)}</button>`
+    : `<button class="act ${g.sep ? 'sep' : ''}" data-act="${i}" title="${esc(g.tip || '')}"><span class="ic">${g.icon || '•'}</span>${esc(g.label)}</button>`
+  ).join('')}</div>`;
+}
+function bindActions(groups) {
+  frame.querySelectorAll('[data-act]').forEach(b => b.onclick = () => groups[b.dataset.act].run());
+  frame.querySelectorAll('[data-menu]').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    closeDrops();
+    const g = groups[b.dataset.menu];
+    const d = document.createElement('div'); d.className = 'drop';
+    d.innerHTML = g.items.map((it, j) => `<button data-j="${j}"><span class="ic" style="color:var(--accent)">${it.icon || '•'}</span><span>${esc(it.label)}<small>${esc(it.tip || '')}</small></span></button>`).join('');
+    const bar = b.parentElement;
+    d.style.left = (b.offsetLeft) + 'px'; d.style.top = (b.offsetTop + b.offsetHeight + 2) + 'px';
+    bar.appendChild(d);
+    d.querySelectorAll('button').forEach(x => x.onclick = () => { closeDrops(); g.items[x.dataset.j].run(); });
+  });
+}
+function closeDrops() { document.querySelectorAll('.drop').forEach(d => d.remove()); }
+document.addEventListener('click', closeDrops);
+
+function header(kind, title) {
+  return `<div class="head">${navStack.length ? '<button class="back" id="back" title="Atrás">←</button>' : ''}<div><div class="kind">${esc(kind)}</div><h1>${esc(title)}</h1></div></div>`;
+}
+
+function grid(table, cols, rows, opts = {}) {
+  const head = cols.map(k => { const [c, t, type] = meta(table, k); return `<th class="${type === 'num' || type === 'int' ? 'num' : ''}" title="${esc(t)}">${esc(c)}</th>`; }).join('');
+  const body = rows.map((r, i) => `<tr class="${opts.sel === i ? 'sel' : ''}" data-row="${i}"><td class="sel-cell"></td>${cols.map((k, ci) => {
+    const type = meta(table, k)[2];
+    let v;
+    if (opts.editable && !['bool', 'enum'].includes(type)) v = `<input type="text" value="${esc(type === 'num' ? (r[k] ? nf.format(r[k]) : '') : r[k])}">`;
+    else if (opts.editable && type === 'bool') v = `<input type="checkbox" class="chk" ${r[k] ? 'checked' : ''}>`;
+    else v = fmt(table, k, r[k]);
+    if (opts.link === k) v = `<a data-link="${i}">${v}</a>`;
+    const style = opts.style && opts.style[k] ? opts.style[k](r) : '';
+    return `<td class="${type === 'num' || type === 'int' ? 'num' : ''} ${style}" title="${esc(typeof r[k] === 'string' ? r[k] : '')}">${v}</td>`;
+  }).join('')}</tr>`).join('');
+  return `<div class="grid-wrap"><table class="grid"><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+function bindGrid(scope, rows, opts) {
+  scope.querySelectorAll('tbody tr').forEach(tr => tr.addEventListener('click', e => {
+    if (e.target.closest('input')) return;
+    const i = +tr.dataset.row;
+    if (e.target.closest('[data-link]') && opts.onLink) return opts.onLink(rows[i], i);
+    if (opts.onSelect) opts.onSelect(rows[i], i);
+  }));
+}
+
+function cardField(table, k, v, opts = {}) {
+  const [c, t, type, vals] = meta(table, k);
+  let ctl;
+  if (opts.masked) ctl = `<input type="password" value="********">`;
+  else if (type === 'bool') ctl = `<label class="toggle"><input type="checkbox" ${v ? 'checked' : ''}><i></i></label>`;
+  else if (type === 'enum') ctl = `<select>${vals.map((x, j) => `<option ${j === v ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>`;
+  else if (type === 'ro') ctl = `<input type="text" readonly value="${esc(v)}">`;
+  else ctl = `<input type="text" value="${esc(v)}"${type === 'lookup' ? ' list="none"' : ''}>`;
+  return `<div class="fld"><label title="${esc(opts.tip || t)}"><span>${esc(opts.caption || c)}</span></label><div class="ctl">${ctl}</div></div>`;
+}
+function fastTab(title, inner, summary = '', closed = false) {
+  return `<section class="fasttab ${closed ? 'closed' : ''}"><header><span class="chev">▼</span><h2>${esc(title)}</h2><span class="summary">${esc(summary)}</span></header>${inner}</section>`;
+}
+function bindFastTabs() {
+  frame.querySelectorAll('.fasttab > header').forEach(h => h.onclick = () => h.parentElement.classList.toggle('closed'));
+}
+
+function dialog(title, bodyHtml, onOk, okLabel = 'Aceptar', cancel = true) {
+  const o = document.createElement('div'); o.className = 'overlay';
+  o.innerHTML = `<div class="dialog" role="dialog" aria-modal="true"><h2>${esc(title)}</h2><div class="dbody">${bodyHtml}</div><footer><button class="btn primary" id="ok">${esc(okLabel)}</button>${cancel ? '<button class="btn" id="cancel">Cancelar</button>' : ''}</footer></div>`;
+  document.body.appendChild(o);
+  o.querySelector('#ok').onclick = () => { o.remove(); onOk && onOk(); };
+  const c = o.querySelector('#cancel'); if (c) c.onclick = () => o.remove();
+  o.onclick = e => { if (e.target === o) o.remove(); };
+}
+function relaunchDialog(center, date) {
+  dialog('Relanzar día Revo', `
+    <div class="fld"><label title="Centro a relanzar. Vacío relanza todos los centros activos de la empresa."><span>Centro (vacío = todos)</span></label><div class="ctl"><select><option></option>${D.centers.map(c => `<option ${c.Code === center ? 'selected' : ''}>${c.Code}</option>`).join('')}</select></div></div>
+    <div class="fld"><label title="Día de facturación Revo a reimportar y reprocesar."><span>Fecha</span></label><div class="ctl"><input type="text" value="${esc(date)}"></div></div>`,
+    () => toast('Se ha encolado la reimportación y reproceso del día.'));
+}
+function msg(text) { dialog('Business Central', `<p style="margin:0 0 6px">${esc(text)}</p>`, null, 'Aceptar', false); }
+
+/* ---------- Páginas ---------- */
+const PAGES = {
+  setup: { label: 'Configuración Revo', render() {
+    const s = D.setup;
+    const acts = [
+      { label: 'Crear tarea diaria', icon: '⏱', tip: 'Crea la entrada recurrente de la cola de proyectos para esta empresa.', run: () => toast('Entrada de cola de proyectos creada: Revo Sync Job, diaria 03:00.') },
+      { label: 'Centros', icon: '🏬', tip: 'Abre los centros Revo.', run: () => go('centers') },
+      { menu: 'Acciones', sep: true, items: [{ label: 'Crear tarea diaria', icon: '⏱', tip: 'Crea la entrada recurrente de la cola de proyectos para esta empresa.', run: () => toast('Entrada de cola de proyectos creada.') }] },
+      { menu: 'Relacionado', items: [
+        { label: 'Centros', icon: '🏬', tip: 'Abre los centros Revo.', run: () => go('centers') },
+        { label: 'Log de errores', icon: '⚠', tip: 'Abre el log de errores.', run: () => go('log') }] },
+    ];
+    frame.innerHTML = header('Ficha', 'Configuración Revo') + actionBar(acts) + `<div class="body"><div class="main">
+      ${fastTab('API Revo', `<div class="fields">${['ApiUrl', 'PageSize', 'Timeout', 'Retries'].map(k => cardField('setup', k, s[k])).join('')}</div>`, s.ApiUrl)}
+      ${fastTab('Documentos', `<div class="fields">${['VatPrefix', 'ZeroVat', 'UoM', 'CrMemoPrice'].map(k => cardField('setup', k, s[k])).join('')}</div>`, `${s.VatPrefix} · ${s.ZeroVat} · ${s.UoM}`)}
+      ${fastTab('Sincronización', `<div class="fields">${['DaysBack', 'EndOffset', 'MaxAttempts'].map(k => cardField('setup', k, s[k])).join('')}</div>`, `${s.DaysBack} día(s) · ${s.MaxAttempts} intentos`)}
+    </div></div>`;
+    bindActions(acts); bindFastTabs();
+  } },
+
+  centers: { label: 'Centros Revo', render() {
+    const cols = ['Code', 'Name', 'Enabled', 'GenericCustomer', 'DimValue', 'LastSyncDate', 'LastSyncAt'];
+    const rows = D.centers;
+    const cur = rows[state.sel] || rows[0];
+    const acts = [
+      { label: 'Nuevo', icon: '+', run: () => go('centerCard', { center: '' }) },
+      { label: 'Abrir ficha', icon: '✎', run: () => go('centerCard', { center: cur.Code }) },
+      { menu: 'Relacionado', sep: true, items: [
+        { label: 'Facturas Revo', icon: '🧾', tip: 'Facturas importadas del centro.', run: () => go('invoices', { filter: cur.Code }) },
+        { label: 'Log de errores', icon: '⚠', tip: 'Errores del centro.', run: () => go('log', { filter: cur.Code }) }] },
+    ];
+    frame.innerHTML = header('Lista', 'Centros Revo') + actionBar(acts) + `<div class="body"><div class="main">${grid('center', cols, rows, { link: 'Code', sel: state.sel })}<p class="hint">Página no editable: el código abre la ficha del centro (CardPageId).</p></div></div>`;
+    bindActions(acts);
+    bindGrid(frame, rows, { onLink: r => go('centerCard', { center: r.Code }), onSelect: (r, i) => { state.sel = i; render(); } });
+  } },
+
+  centerCard: { label: 'Centro Revo (ficha)', render() {
+    const c = D.centers.find(x => x.Code === state.center) || Object.fromEntries(Object.keys(F.center).map(k => [k, F.center[k][2] === 'bool' ? false : '']));
+    const title = c.Code ? `${c.Code} · ${c.Name}` : 'Nuevo';
+    const acts = [
+      { label: 'Probar conexión', icon: '🔗', tip: 'Lee (GET) la primera página de facturas de ayer. No escribe nada.', run: () => msg('Conexión correcta. Facturas en la primera página: 100') },
+      { label: 'Relanzar día', icon: '↻', tip: 'Encola la reimportación y reproceso de un día para este centro.', run: () => relaunchDialog(c.Code, '01/10/2026') },
+      { label: 'Mapeo supergrupos', icon: '▦', tip: 'Supergrupo Revo -> producto BC.', run: () => go('sg', { filter: c.Code }) },
+      { label: 'Mapeo métodos de pago', icon: '💳', tip: 'Método de pago Revo -> plantilla/sección diario.', run: () => go('pm', { filter: c.Code }) },
+      { menu: 'Acciones', sep: true, items: [
+        { label: 'Cargar letras por defecto', icon: '★', tip: 'Crea S/A/O/N (factura), R/X (abono), I/L (excluidas) si no existen.', run: () => toast('Letras por defecto cargadas (las existentes no se modifican).') },
+        { label: 'Probar conexión', icon: '🔗', tip: 'Lee (GET) la primera página de facturas de ayer. No escribe nada.', run: () => msg('Conexión correcta. Facturas en la primera página: 100') },
+        { label: 'Relanzar día', icon: '↻', tip: 'Encola la reimportación y reproceso de un día para este centro.', run: () => relaunchDialog(c.Code, '01/10/2026') }] },
+      { menu: 'Relacionado', items: [
+        { label: 'Mapeo supergrupos', icon: '▦', tip: 'Supergrupo Revo -> producto BC.', run: () => go('sg', { filter: c.Code }) },
+        { label: 'Mapeo métodos de pago', icon: '💳', tip: 'Método de pago Revo -> plantilla/sección diario.', run: () => go('pm', { filter: c.Code }) },
+        { label: 'Facturas Revo', icon: '🧾', tip: 'Facturas importadas del centro.', run: () => go('invoices', { filter: c.Code }) }] },
+    ];
+    const f = (keys) => `<div class="fields">${keys.map(k => cardField('center', k, c[k])).join('')}</div>`;
+    const creds = `<div class="fields">${cardField('center', 'RevoTenant', c.RevoTenant)}
+      ${cardField('center', 'RevoTenant', '', { masked: true, caption: 'Token (Bearer)', tip: 'Se guarda en IsolatedStorage. Deje vacío para borrarlo.' })}
+      ${cardField('center', 'RevoTenant', '', { masked: true, caption: 'Client-token', tip: 'Se guarda en IsolatedStorage. Deje vacío para borrarlo.' })}</div>`;
+    const lettersGrid = grid('letter', ['Letter', 'Description', 'Kind', 'Series', 'Customer', 'RequireNIF'], c.Code ? D.letters : [], { editable: true, sel: -1 });
+    frame.innerHTML = header('Ficha', title) + actionBar(acts) + `<div class="body"><div class="main">
+      ${fastTab('General', f(['Code', 'Name', 'Enabled', 'LastSyncDate', 'LastSyncAt']), `${c.Name} · ${c.Enabled ? 'Activo' : 'Inactivo'}`)}
+      ${fastTab('Credenciales Revo', creds, c.RevoTenant)}
+      ${fastTab('Documentos', f(['GenericCustomer', 'PaymentTerms', 'Location', 'PricesInclVAT', 'SimplifiedNos', 'NominalNos', 'RectifyingNos', 'DefaultSG']), `${c.GenericCustomer} · ${c.Location}`)}
+      ${fastTab('Dimensión', f(['DimCode', 'DimValue']), `${c.DimCode} ${c.DimValue}`)}
+      ${fastTab('Letras de prefijo', `<div class="part-inner">${lettersGrid}</div>`, `${c.Code ? D.letters.length : 0} letras`)}
+    </div></div>`;
+    bindActions(acts); bindFastTabs();
+  } },
+
+  invoices: { label: 'Facturas Revo', render() {
+    const rows = state.filter ? D.invoices.filter(r => r.Center === state.filter) : D.invoices;
+    const cols = ['EntryNo', 'Center', 'InvNo', 'Order', 'Letter', 'Kind', 'Date', 'Time', 'NIF', 'CustName', 'Total', 'Discount', 'Expected', 'Imported', 'Status', 'Error', 'Attempts', 'SalesType', 'SalesNo', 'CustNo', 'PendingPay', 'PreExisting', 'Modified', 'ProcessedAt'];
+    const cur = rows[state.sel] || rows[0];
+    const acts = [
+      { label: 'Reprocesar selección', icon: '⟳', tip: 'Crea los borradores pendientes/en error seleccionados y sus pagos. No modifica documentos ya creados.', run: () => toast(cur.Status === 'Creado (borrador)' ? 'La factura ya tiene documento creado: no se modifica.' : `Reprocesando ${cur.InvNo}…`) },
+      { label: 'Relanzar día', icon: '↻', tip: 'Encola la reimportación y reproceso del día de la factura seleccionada.', run: () => relaunchDialog(cur.Center, cur.Date) },
+      { label: 'Abrir documento venta', icon: '📄', tip: 'Abre la factura/abono borrador creado.', run: () => cur.SalesNo ? toast(`Se abriría ${cur.SalesType === 'Abono' ? 'el abono de venta' : 'la factura de venta'} ${cur.SalesNo} (página estándar de BC).`) : msg('Debe especificar Nº documento venta en Factura Revo: Nº mov.=' + cur.EntryNo + '. El valor actual es \'\'.') },
+      { label: 'Pagos', icon: '💳', tip: 'Pagos Revo de la factura.', run: () => go('payments', { filter: cur.EntryNo }) },
+      { menu: 'Relacionado', sep: true, items: [
+        { label: 'Abrir documento venta', icon: '📄', tip: 'Abre la factura/abono borrador creado.', run: () => toast('Se abriría el documento de venta (página estándar de BC).') },
+        { label: 'Pagos', icon: '💳', tip: 'Pagos Revo de la factura.', run: () => go('payments', { filter: cur.EntryNo }) },
+        { label: 'Log de errores', icon: '⚠', tip: 'Errores de la factura.', run: () => go('log', { filter: cur.EntryNo }) }] },
+    ];
+    const lineRows = (D.lines[cur.EntryNo] || []).map(([LineId, ItemName, SG, Qty, Price, Disc, VAT, Total, Item, SalesLine]) => ({ LineId, ItemName, SG, Qty, Price, Disc, VAT, Total, Item, SalesLine }));
+    frame.innerHTML = header('Lista', 'Facturas Revo' + (state.filter ? ` · ${state.filter}` : '')) + actionBar(acts) + `<div class="body"><div class="main">
+      ${grid('inv', cols, rows, { sel: state.sel, style: { Status: r => STYLE[r.Status] || '' } })}
+      <div class="part"><h2>Líneas · ${esc(cur.InvNo)}</h2>${grid('line', ['LineId', 'ItemName', 'SG', 'Qty', 'Price', 'Disc', 'VAT', 'Total', 'Item', 'SalesLine'], lineRows, { sel: -1 })}</div>
+      <p class="hint">Haz clic en una factura para ver sus líneas. Pasa el ratón por las cabeceras para ver el tooltip de cada campo.</p>
+    </div></div>`;
+    bindActions(acts);
+    bindGrid(frame.querySelector('.main > .grid-wrap'), rows, { onSelect: (r, i) => { state.sel = i; render(); } });
+  } },
+
+  payments: { label: 'Pagos Revo', render() {
+    const rows = state.filter ? D.payments.filter(r => r.Header === state.filter) : D.payments;
+    const cols = ['EntryNo', 'Center', 'Header', 'Date', 'Time', 'Method', 'Amount', 'Tip', 'Cashier', 'Status', 'Error', 'Attempts', 'Template', 'Batch', 'JnlLine'];
+    frame.innerHTML = header('Lista', 'Pagos Revo' + (state.filter ? ` · factura ${state.filter}` : '')) + actionBar([]).replace('<div class="actions"></div>', '<div class="actions"><span class="act" style="cursor:default;color:var(--text-2)">Página de solo lectura, sin acciones propias</span></div>') + `<div class="body"><div class="main">${grid('pay', cols, rows, { sel: state.sel })}</div></div>`;
+    bindGrid(frame, rows, { onSelect: (r, i) => { state.sel = i; render(); } });
+  } },
+
+  sg: { label: 'Mapeo supergrupos', render() {
+    const rows = state.filter ? D.sg.filter(r => r.Center === state.filter) : D.sg;
+    const acts = [{ label: 'Nuevo', icon: '+', run: () => toast('Nueva línea de mapeo') }, { label: 'Eliminar', icon: '🗑', run: () => toast('Línea eliminada') }];
+    frame.innerHTML = header('Lista editable', 'Mapeo supergrupos Revo') + actionBar(acts) + `<div class="body"><div class="main">${grid('sg', ['Center', 'SGId', 'Description', 'SpecificVAT', 'VAT', 'Item', 'KeepSign'], rows, { editable: true, sel: state.sel })}<p class="hint">Un supergrupo puede tener un mapeo general y otros específicos por % de IVA (p. ej. bebida al 10% y al 21%).</p></div></div>`;
+    bindActions(acts);
+    bindGrid(frame, rows, { onSelect: (r, i) => { state.sel = i; render(); } });
+  } },
+
+  pm: { label: 'Mapeo métodos de pago', render() {
+    const rows = state.filter ? D.pm.filter(r => r.Center === state.filter) : D.pm;
+    const acts = [{ label: 'Nuevo', icon: '+', run: () => toast('Nueva línea de mapeo') }, { label: 'Eliminar', icon: '🗑', run: () => toast('Línea eliminada') }];
+    frame.innerHTML = header('Lista editable', 'Mapeo métodos de pago Revo') + actionBar(acts) + `<div class="body"><div class="main">${grid('pm', ['Center', 'Method', 'Action', 'Template', 'Batch', 'PayMethod'], rows, { editable: true, sel: state.sel })}</div></div>`;
+    bindActions(acts);
+    bindGrid(frame, rows, { onSelect: (r, i) => { state.sel = i; render(); } });
+  } },
+
+  log: { label: 'Log de errores', render() {
+    let rows = D.log;
+    if (typeof state.filter === 'number') rows = rows.filter(r => r.Header === state.filter);
+    else if (state.filter) rows = rows.filter(r => r.Center === state.filter);
+    const cur = rows[state.sel] || rows[0] || {};
+    const acts = [
+      { label: 'Relanzar día', icon: '↻', tip: 'Reimporta de Revo el día seleccionado y reprocesa lo pendiente/en error. No toca documentos ya creados.', run: () => relaunchDialog(cur.Center, cur.DocDate) },
+      { label: 'Factura Revo', icon: '🧾', tip: 'Abre la factura Revo del error.', run: () => { const i = D.invoices.findIndex(x => x.EntryNo === cur.Header); i >= 0 ? go('invoices', { sel: i }) : msg('El error no está asociado a ninguna factura.'); } },
+    ];
+    frame.innerHTML = header('Lista', 'Log de errores Revo' + (state.filter ? ` · ${state.filter}` : '')) + actionBar(acts) + `<div class="body"><div class="main">${grid('log', ['EntryNo', 'LoggedAt', 'Center', 'Area', 'DocDate', 'InvNo', 'Message', 'User'], rows, { sel: state.sel })}</div>
+      <aside class="factbox"><h3>Detalle</h3>
+        <div class="fb-label" title="${esc(F.log.Message[1])}">Mensaje</div><div class="fb-val">${esc(cur.Message)}</div>
+        <div class="fb-label" title="${esc(F.log.CallStack[1])}">Pila de llamadas</div><div class="fb-val" style="font-family:Consolas,monospace;font-size:12px">${esc(cur.CallStack)}</div>
+      </aside></div>`;
+    bindActions(acts);
+    bindGrid(frame, rows, { onSelect: (r, i) => { state.sel = i; render(); } });
+  } },
+};
+
+function render() {
+  closeDrops();
+  PAGES[state.page].render();
+  const b = document.getElementById('back'); if (b) b.onclick = back;
+  document.querySelectorAll('#preview button').forEach(x => x.classList.toggle('on', x.dataset.p === state.page));
+}
+
+document.getElementById('preview').innerHTML = '<strong>Vista previa (maqueta)</strong>' +
+  Object.entries(PAGES).map(([k, p]) => `<button data-p="${k}">${p.label}</button>`).join('') +
+  '<span class="note">Datos ficticios · aproximación al cliente web de BC</span>';
+document.querySelectorAll('#preview button').forEach(b => b.onclick = () => { navStack = []; go(b.dataset.p, b.dataset.p === 'centerCard' ? { center: 'OLE01' } : {}, false); });
+
+render();
+</script>
+</body>
+</html>
