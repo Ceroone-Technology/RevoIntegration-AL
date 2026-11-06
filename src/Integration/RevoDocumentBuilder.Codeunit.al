@@ -205,7 +205,7 @@ codeunit 50404 "Revo Document Builder"
         SalesLine.Validate("Unit Price", UnitPrice);
         DimHelper.ApplyCenterDimension(RevoCenter, SalesLine."Dimension Set ID",
             SalesLine."Shortcut Dimension 1 Code", SalesLine."Shortcut Dimension 2 Code");
-        if HasLines then
+        if HasLines or (Difference <> 0) then
             SalesLine.Description := CopyStr(MissingLinesAdjustmentTxt, 1, MaxStrLen(SalesLine.Description))
         else
             SalesLine.Description := CopyStr(EmptyTicketLineTxt, 1, MaxStrLen(SalesLine.Description));

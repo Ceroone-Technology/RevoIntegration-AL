@@ -3,7 +3,7 @@
 Extensión PTE de **Ceroone** para **Grupo Olé** que integra el TPV **Revo** con **Dynamics 365 Business Central**.
 Sustituye al Laravel `RevoBusinessCentralGrupoOle`: corre dentro de BC (cola de proyectos), sin servidor intermedio.
 
-- **Versión:** 1.0.16.0. Estado a 05/11/2026: probada en el sandbox `Development_20260421` (centro GAL, Almudévar) y pendiente del paso a producción.
+- **Versión:** 1.0.18.0. Estado a 05/11/2026: probada en el sandbox `Development_20260421` (centro GAL, Almudévar) y en paso a producción.
 - **Destino:** BC Online (Cloud), aplicación 26+, runtime 15, localización ES. IDs 50400–50449.
 
 ## Qué hace
@@ -85,8 +85,8 @@ RevoIntegration-AL/
 | Cliente | NIF existente → alta automática si el NIF es válido y hay nombre → cliente de la letra → genérico del centro. N y X exigen NIF. |
 | Línea sin supergrupo | Toma el supergrupo por defecto del centro (8, como el Laravel). |
 | Factura sin cobros (a 0, invitación) | Forma de pago sin cobros del centro, que no puede tener contrapartida (p. ej. ALMEFECTIV). |
-| Ticket vacío (sin líneas, a 0) | Se sube solo con una línea a 0 del *producto línea de ajuste* del centro. Así no quedan huecos en la numeración. |
-| Faltan líneas de Revo | Queda en error. **Forzar subida** la crea con una línea de ajuste hasta el total de Revo y después hay que forzar su registro. |
+| Ticket a 0 sin líneas importadas | Se sube y se registra solo con una línea a 0 (*"Ticket sin líneas en Revo"*) del *producto línea de ajuste* del centro, aunque Revo indique líneas esperadas. Así no quedan huecos en la numeración. |
+| Faltan líneas de Revo y la factura tiene importe | Queda en error. **Forzar subida** la crea con una línea de ajuste (*"Ajuste: líneas no recibidas de Revo"*) hasta el total de Revo y después hay que forzar su registro. |
 | Ya existe en BC (Laravel o manual) | Se enlaza como *preexistente*; no se crean cobros, para no duplicarlos. |
 | Borrar un borrador | Con el botón **Borrar borrador** o desde la página de BC, sin crear el documento vacío de numeración. La factura vuelve a Pendiente y se crea de nuevo con el mismo nº. |
 | Propina | No forma parte del cobro (el `total` del pago de Revo ya la excluye). |
@@ -118,11 +118,11 @@ La guía paso a paso de despliegue y pruebas en producción, los resultados de l
 
 ## Pendiente a 05/11/2026
 
-- **Producto de la línea de ajuste**: el cliente tiene que confirmar producto o cuenta y el IVA.
-- **Pruebas en el sandbox de la 1.0.16.0**:
-  - borrar un borrador (botón y página de BC);
-  - ticket vacío;
-  - forzar subida con líneas incompletas.
+- **Producto de la línea de ajuste**: el cliente tiene que confirmar producto o cuenta y el IVA. Mientras esté vacío en el centro, los tickets a 0 sin líneas quedan en error con un mensaje que lo indica.
+- **Probado en el sandbox (1.0.16.0 – 1.0.18.0)**:
+  - T21 y T22: borrar un borrador con el botón y desde la página de BC, sin documento vacío;
+  - T23 y T25: ticket a 0 sin líneas subido y registrado solo;
+  - T24: forzar subida y forzar registro de una factura sin líneas con importe.
 - Pruebas T11–T13: errores de configuración (supergrupo sin mapear, método sin sección, serie N eliminada).
 - **H2**: la serie `DIAG-CBRO` asigna el mismo nº de documento a todos los cobros de la sección. Hay que decidir con contabilidad si se renumeran o si cada cobro lleva su propio nº.
 - Fecha de corte del Laravel y confirmación de que el SII no recibe dos veces las facturas.

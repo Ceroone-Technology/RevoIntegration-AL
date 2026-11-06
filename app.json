@@ -2,7 +2,7 @@
   "id": "424deb08-ac11-4dff-95cb-e985edca8489",
   "name": "Revo TPV Integration",
   "publisher": "Ceroone",
-  "version": "1.0.16.0",
+  "version": "1.0.18.0",
   "brief": "Integración Revo (TPV) con Business Central para Grupo Olé.",
   "description": "Importa facturas, líneas y pagos de Revo a tablas staging y genera documentos de venta y líneas de diario de cobro en borrador (sin registrar).",
   "privacyStatement": "",

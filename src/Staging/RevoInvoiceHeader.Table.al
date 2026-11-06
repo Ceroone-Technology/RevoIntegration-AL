@@ -525,12 +525,13 @@ table 50410 "Revo Invoice Header"
     end;
 
     /// <summary>
-    /// Ticket sin líneas y a 0 en Revo: se sube solo con una línea de ajuste a 0 para no dejar hueco en la numeración.
+    /// Ticket a 0 sin líneas importadas (aunque Revo indique líneas esperadas): se sube y registra solo con una línea de
+    /// ajuste a 0 para no dejar hueco en la numeración. Con importe 0 no hay nada que revisar.
     /// </summary>
     procedure IsEmptyTicket(): Boolean
     begin
         CalcFields("Imported Lines");
-        exit(("Imported Lines" = 0) and ("Expected Lines" = 0) and (Abs(Total) <= 0.01));
+        exit(("Imported Lines" = 0) and (Abs(Total) <= 0.01));
     end;
 
     procedure HasMissingLines(): Boolean
@@ -615,7 +616,7 @@ table 50410 "Revo Invoice Header"
         if "Modified After Creation" then
             exit(ModifiedInRevoTxt);
         CalcFields("Imported Lines");
-        if ("Expected Lines" > 0) and ("Imported Lines" <> "Expected Lines") then
+        if ("Expected Lines" > 0) and ("Imported Lines" <> "Expected Lines") and not IsEmptyTicket() then
             exit(StrSubstNo(MissingLinesTxt, "Imported Lines", "Expected Lines"));
         if "Lines Mismatch" then
             exit(StrSubstNo(LinesMismatchTxt, Format("Lines Difference", 0, '<Precision,2:2><Standard Format,0>')));
