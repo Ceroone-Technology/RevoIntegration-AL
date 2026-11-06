@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Development_20260421 (Grupo Olé)",
+      "type": "al",
+      "request": "launch",
+      "environmentType": "Sandbox",
+      "environmentName": "Development_20260421",
+      "tenant": "28bc6d77-52ea-4888-ac5e-1eacec3be425",
+      "startupCompany": "Grupo Olé",
+      "startupObjectType": "Page",
+      "startupObjectId": 50400,
+      "schemaUpdateMode": "Synchronize",
+      "breakOnError": "All",
+      "launchBrowser": true,
+      "enableLongRunningSqlStatements": true,
+      "enableSqlInformationDebugger": true
+    }
+  ]
+}

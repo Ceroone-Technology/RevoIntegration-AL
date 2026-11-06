@@ -1,0 +1,10 @@
+# Paquetes compilados y símbolos (se regeneran: compilar / scripts/Get-Symbols.ps1)
+*.app
+output/
+.alpackages/
+.snapshots/
+
+# Estado local de VS Code / AL
+.vscode/rad.json
+*.flf
+*.bclicense
