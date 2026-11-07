@@ -40,6 +40,7 @@ permissionset 50400 "REVO INTEGRATION"
         codeunit "Revo Sync Job" = X,
         codeunit "Revo Posting Subscribers" = X,
         codeunit "Revo Draft Subscribers" = X,
+        codeunit "Revo Sales Header Subscribers" = X,
         codeunit "Revo NIF Helper" = X,
         codeunit "Revo Doc. Poster" = X,
         page "Revo Setup" = X,

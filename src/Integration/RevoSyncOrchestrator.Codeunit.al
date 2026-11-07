@@ -22,6 +22,10 @@ codeunit 50408 "Revo Sync Orchestrator"
         ToDateParamTok: Label 'TO', Locked = true;
         PostErrorTxt: Label 'BC dio error al registrar: %1', Comment = '%1 = error de registro';
         NoErrorTextTxt: Label 'BC no devolvió el mensaje (origen: %1). Ver detalle en el log de errores.', Comment = '%1 = primera línea de la pila';
+        NothingToDeleteErr: Label 'No hay facturas Revo en la vista actual.';
+        DeleteStagingQst: Label 'Se borrarán de la tabla intermedia las %1 facturas Revo de la vista actual (según los filtros), con sus líneas, pagos y errores. No se borra la configuración ni nada de BC (borradores, facturas registradas, diarios). Después puede volver a importarlas con Relanzar día. ¿Continuar?', Comment = '%1 = nº facturas';
+        DeleteStagingConfirmQst: Label 'Esta acción no se puede deshacer. ¿Seguro que quiere borrarlas?';
+        StagingDeletedMsg: Label 'Facturas Revo borradas de la tabla intermedia: %1. La configuración se mantiene.', Comment = '%1 = nº facturas';
         MaxRelaunchDays: Integer;
         PauseBetweenDaysMs: Integer;
         CenterParamTok: Label 'CENTER', Locked = true;
@@ -103,6 +107,8 @@ codeunit 50408 "Revo Sync Orchestrator"
                 ImportDayAndLog(RevoCenter, ForDate, LogEntryNo);
                 ResetAttempts(RevoCenter.Code, ForDate, ForDate);
                 ProcessDocuments(RevoCenter.Code, ForDate);
+                // Como la tarea diaria: lo ya registrado en BC (p. ej. preexistentes del Laravel) pasa a Registrado.
+                RefreshCenterStatuses(RevoCenter.Code);
                 AutoPostDocuments(RevoCenter.Code, ForDate);
                 ProcessPayments(RevoCenter.Code, ForDate);
                 SyncLogger.FinishRun(LogEntryNo);
@@ -114,23 +120,35 @@ codeunit 50408 "Revo Sync Orchestrator"
     /// </summary>
     procedure RefreshStatuses(var RevoHeader: Record "Revo Invoice Header"): Integer
     var
+        FilteredHeader: Record "Revo Invoice Header";
+        CurrHeader: Record "Revo Invoice Header";
+        EntryNos: List of [Integer];
+        EntryNo: Integer;
         Changed: Integer;
         StatusChanged: Boolean;
         ChecksChanged: Boolean;
     begin
-        if RevoHeader.FindSet(true) then
+        // Primero los nº de movimiento: el bucle cambia Estado, que puede estar en la clave/filtro del llamador
+        // (p. ej. Status = Creado) y cortar el recorrido tras la primera factura.
+        FilteredHeader.CopyFilters(RevoHeader);
+        FilteredHeader.SetLoadFields("Entry No.");
+        if FilteredHeader.FindSet() then
             repeat
-                StatusChanged := RevoHeader.ResetIfGapPlaceholder();
-                if not StatusChanged then
-                    StatusChanged := RevoHeader.UpdatePostedStatus();
-                if not StatusChanged then
-                    StatusChanged := RevoHeader.ResetIfDraftDeleted();
-                ChecksChanged := RevoHeader.UpdateChecks();
-                if StatusChanged or ChecksChanged then begin
-                    RevoHeader.Modify();
-                    Changed += 1;
-                end;
-            until RevoHeader.Next() = 0;
+                EntryNos.Add(FilteredHeader."Entry No.");
+            until FilteredHeader.Next() = 0;
+        foreach EntryNo in EntryNos do begin
+            CurrHeader.Get(EntryNo);
+            StatusChanged := CurrHeader.ResetIfGapPlaceholder();
+            if not StatusChanged then
+                StatusChanged := CurrHeader.UpdatePostedStatus();
+            if not StatusChanged then
+                StatusChanged := CurrHeader.ResetIfDraftDeleted();
+            ChecksChanged := CurrHeader.UpdateChecks();
+            if StatusChanged or ChecksChanged then begin
+                CurrHeader.Modify();
+                Changed += 1;
+            end;
+        end;
         exit(Changed);
     end;
 
@@ -629,6 +647,76 @@ codeunit 50408 "Revo Sync Orchestrator"
             Message(RelaunchQueuedMsg, CenterCode, ForDate)
         else
             Message(RelaunchRangeQueuedMsg, CenterCode, ForDate, ToDate, ToDate - ForDate + 1);
+    end;
+
+    /// <summary>
+    /// Borra de la tabla intermedia las facturas Revo filtradas (la vista de la página) con sus líneas, enlaces, pagos y
+    /// errores, y el registro de sincronizaciones de los días que queden sin facturas, para volver a importarlas con
+    /// Relanzar día. No toca la configuración ni nada de BC (borradores, facturas registradas, diarios).
+    /// </summary>
+    procedure DeleteStagingHeaders(var RevoHeader: Record "Revo Invoice Header")
+    var
+        DelHeader: Record "Revo Invoice Header";
+        RevoLine: Record "Revo Invoice Line";
+        RevoPayment: Record "Revo Payment";
+        ContentLink: Record "Revo Invoice Content Link";
+        RevoErrorLog: Record "Revo Error Log";
+        SyncLog: Record "Revo Sync Log";
+        RemainingHeader: Record "Revo Invoice Header";
+        Centers: List of [Code[20]];
+        Dates: List of [Date];
+        i: Integer;
+        Selected: Integer;
+    begin
+        DelHeader.CopyFilters(RevoHeader);
+        Selected := DelHeader.Count();
+        if Selected = 0 then
+            Error(NothingToDeleteErr);
+        if not Confirm(DeleteStagingQst, false, Selected) then
+            exit;
+        if not Confirm(DeleteStagingConfirmQst, false) then
+            exit;
+        if DelHeader.FindSet() then
+            repeat
+                if not ContainsCenterDate(Centers, Dates, DelHeader."Center Code", DelHeader."Invoice Date") then begin
+                    Centers.Add(DelHeader."Center Code");
+                    Dates.Add(DelHeader."Invoice Date");
+                end;
+                RevoLine.SetRange("Header Entry No.", DelHeader."Entry No.");
+                RevoLine.DeleteAll();
+                RevoPayment.SetRange("Header Entry No.", DelHeader."Entry No.");
+                RevoPayment.DeleteAll();
+                ContentLink.SetCurrentKey("Header Entry No.");
+                ContentLink.SetRange("Header Entry No.", DelHeader."Entry No.");
+                ContentLink.DeleteAll();
+                RevoErrorLog.SetRange("Header Entry No.", DelHeader."Entry No.");
+                RevoErrorLog.DeleteAll();
+            until DelHeader.Next() = 0;
+        DelHeader.DeleteAll();
+
+        // Registro de sincronizaciones: solo de los días que se quedan sin facturas.
+        for i := 1 to Centers.Count() do begin
+            RemainingHeader.Reset();
+            RemainingHeader.SetRange("Center Code", Centers.Get(i));
+            RemainingHeader.SetRange("Invoice Date", Dates.Get(i));
+            if RemainingHeader.IsEmpty() then begin
+                SyncLog.SetRange("Center Code", Centers.Get(i));
+                SyncLog.SetRange("Invoice Date", Dates.Get(i));
+                SyncLog.DeleteAll();
+            end;
+        end;
+        Commit();
+        Message(StagingDeletedMsg, Selected);
+    end;
+
+    local procedure ContainsCenterDate(Centers: List of [Code[20]]; Dates: List of [Date]; CenterCode: Code[20]; ForDate: Date): Boolean
+    var
+        i: Integer;
+    begin
+        for i := 1 to Centers.Count() do
+            if (Centers.Get(i) = CenterCode) and (Dates.Get(i) = ForDate) then
+                exit(true);
+        exit(false);
     end;
 
     /// <summary>

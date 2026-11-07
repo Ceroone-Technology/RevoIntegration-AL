@@ -382,6 +382,7 @@ codeunit 50404 "Revo Document Builder"
             SalesHeader."Posting No. Series" := PostingNoSeries;
         SalesHeader."Posting No." := SalesHeader."No.";
         SalesHeader."External Document No." := CopyStr(RevoHeader."Revo Invoice No.", 1, MaxStrLen(SalesHeader."External Document No."));
+        SalesHeader."Revo Integration Doc." := true;
         SalesHeader."Your Reference" := CopyStr(RevoHeader."Revo Order", 1, MaxStrLen(SalesHeader."Your Reference"));
 
         PaymentMethodCode := GetPaymentMethodCode(RevoHeader);

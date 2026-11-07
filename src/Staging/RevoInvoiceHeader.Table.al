@@ -384,8 +384,17 @@ table 50410 "Revo Invoice Header"
             exit;
         end;
         TestField("Sales Document No.");
-        if not SalesHeader.Get("Sales Document Type", "Sales Document No.") then
+        if not SalesHeader.Get("Sales Document Type", "Sales Document No.") then begin
+            // Sin borrador: si ya está registrado (p. ej. preexistente que registró el Laravel), se marca y se abre.
+            if UpdatePostedStatus() then begin
+                Modify();
+                if Status = Status::Posted then begin
+                    OpenSalesDocument();
+                    exit;
+                end;
+            end;
             Error(DraftDeletedErr, "Sales Document No.");
+        end;
         if SalesHeader."Document Type" = SalesHeader."Document Type"::"Credit Memo" then
             Page.Run(Page::"Sales Credit Memo", SalesHeader)
         else

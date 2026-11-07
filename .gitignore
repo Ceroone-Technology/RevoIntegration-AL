@@ -8,3 +8,6 @@ output/
 .vscode/rad.json
 *.flf
 *.bclicense
+
+# Archivos temporales de Office (Word abierto)
+~$*

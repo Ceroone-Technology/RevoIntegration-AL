@@ -3,7 +3,7 @@
 Extensión PTE de **Ceroone** para **Grupo Olé** que integra el TPV **Revo** con **Dynamics 365 Business Central**.
 Sustituye al Laravel `RevoBusinessCentralGrupoOle`: corre dentro de BC (cola de proyectos), sin servidor intermedio.
 
-- **Versión:** 1.0.18.0. Estado a 05/11/2026: probada en el sandbox `Development_20260421` (centro GAL, Almudévar) y en paso a producción.
+- **Versión:** 1.0.23.0. Estado a 07/11/2026: **en producción** para el centro GAL (Almudévar) desde el 05/11/2026, en la fase 1 (borradores) y empezando la fase 2 (registro).
 - **Destino:** BC Online (Cloud), aplicación 26+, runtime 15, localización ES. IDs 50400–50449.
 
 ## Qué hace
@@ -60,9 +60,13 @@ RevoIntegration-AL/
     │   ├── RevoNifHelper.Codeunit.al        50411 validación de NIF/CIF/NIE
     │   ├── RevoDocPoster.Codeunit.al        50412 registro de borradores
     │   ├── RevoSyncLogger.Codeunit.al       50413
-    │   └── RevoDraftSubscribers.Codeunit.al 50414 borrar borradores sin documento vacío de numeración
+    │   ├── RevoDraftSubscribers.Codeunit.al 50414 borrar borradores sin documento vacío de numeración
+    │   ├── RevoUpgrade.Codeunit.al          50415 al actualizar: marca los documentos ya creados y rellena usuario/fecha
+    │   └── RevoSalesHeaderSubscribers.Codeunit.al 50416 usuario creador y fecha/hora de subida en todo documento de venta
+    ├── Extensions/     50400-50402 campos "Creado por integración Revo", "Usuario creador" y "Fecha/hora de subida"
+    │                   en Sales Header, Sales Invoice Header y Sales Cr.Memo Header (mismo nº: se copian al registrar)
     ├── Pages/          50400-50419 configuración, centros, mapeos, Facturas Revo (lista y ficha), pagos, logs, relanzar
-    │                   + extensiones de factura y abono registrados
+    │                   + extensiones de factura y abono registrados y de las listas de facturas/abonos de venta
     └── Permissions/    permissionset 50400 "REVO INTEGRATION"
 ```
 
@@ -75,7 +79,9 @@ RevoIntegration-AL/
 5. **Auto-registro** de los borradores que cuadran (si `Auto-Post Matching Docs` está activado).
 6. **Cobros** de las facturas ya creadas, cada uno en su propio `Codeunit.Run`.
 
-**Relanzar día/rango** (desde Facturas Revo o el registro de sincronizaciones): encola una ejecución con `CENTER=X;DATE=AAAA-MM-DD[;TO=AAAA-MM-DD]`, de hasta 31 días, procesados de uno en uno. Reimporta, reinicia los intentos y reprocesa.
+**Relanzar día/rango** (desde Facturas Revo o el registro de sincronizaciones): encola una ejecución con `CENTER=X;DATE=AAAA-MM-DD[;TO=AAAA-MM-DD]`, de hasta 31 días, procesados de uno en uno. Reimporta, reinicia los intentos, reprocesa y al terminar actualiza los estados (como la tarea diaria).
+
+**Vaciar facturas Revo** (lista Facturas Revo): borra de la tabla intermedia las facturas de la vista actual con sus líneas, pagos, enlaces y errores, y las filas del registro de sincronizaciones que quedan sin facturas. No toca documentos de BC ni la configuración. No hay que vaciar días con documentos creados por la integración: al reimportarlos se enlazarían como preexistentes.
 
 ## Reglas principales
 
@@ -91,6 +97,8 @@ RevoIntegration-AL/
 | Borrar un borrador | Con el botón **Borrar borrador** o desde la página de BC, sin crear el documento vacío de numeración. La factura vuelve a Pendiente y se crea de nuevo con el mismo nº. |
 | Propina | No forma parte del cobro (el `total` del pago de Revo ya la excluye). |
 | Hora del ticket | Se copia al campo "Hora Factura" de la extensión Ceroone si está instalada. Se busca por nombre, sin dependencia. |
+| Identificar lo creado por la integración | Campo **Creado por integración Revo** en borradores, facturas y abonos registrados, filtrable en Facturas venta, Abonos venta y sus históricos. |
+| Usuario y hora de subida | Campos **Usuario creador** y **Fecha/hora de subida** en todo documento de venta nuevo (también los manuales). BC guarda la hora en UTC y la muestra en la zona horaria de cada usuario (*Mi configuración*). |
 
 ## Compilar y desplegar
 
@@ -116,14 +124,11 @@ $alc = (Get-ChildItem "$env:USERPROFILE\.vscode\extensions\ms-dynamics-smb.al-*\
 
 La guía paso a paso de despliegue y pruebas en producción, los resultados de las pruebas, el manual de usuario y el registro del paso a producción están en [`docs/`](docs/). El contexto del proyecto para Claude Code está en [CLAUDE.md](CLAUDE.md).
 
-## Pendiente a 05/11/2026
+## Pendiente a 07/11/2026
 
+- **P8 (bloqueante para registrar):** la primera factura registrada (GALS-000242392) salió con Tipo de factura SII F1; para una simplificada lo habitual es F2. Hay que compararla con una GALS registrada por el Laravel.
 - **Producto de la línea de ajuste**: el cliente tiene que confirmar producto o cuenta y el IVA. Mientras esté vacío en el centro, los tickets a 0 sin líneas quedan en error con un mensaje que lo indica.
-- **Probado en el sandbox (1.0.16.0 – 1.0.18.0)**:
-  - T21 y T22: borrar un borrador con el botón y desde la página de BC, sin documento vacío;
-  - T23 y T25: ticket a 0 sin líneas subido y registrado solo;
-  - T24: forzar subida y forzar registro de una factura sin líneas con importe.
+- **H2**: la serie `DIAG-CBRO` asigna el mismo nº de documento a todos los cobros de la sección. Hay que decidir con contabilidad antes de registrar cobros.
+- Bizum sin contrapartida, IVA 0 % (IVA0 o NO SUJETO), serie de la letra O y clientes pasarela: ver P1–P6 en el registro del paso a producción.
 - Pruebas T11–T13: errores de configuración (supergrupo sin mapear, método sin sección, serie N eliminada).
-- **H2**: la serie `DIAG-CBRO` asigna el mismo nº de documento a todos los cobros de la sección. Hay que decidir con contabilidad si se renumeran o si cada cobro lleva su propio nº.
-- Fecha de corte del Laravel y confirmación de que el SII no recibe dos veces las facturas.
 - Regla de la madrugada (tickets después de medianoche) y generador de casos de prueba.

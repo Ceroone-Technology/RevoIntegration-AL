@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "bc-grupoole": {
+      "type": "http",
+      "url": "https://mcp.businesscentral.dynamics.com",
+      "headers": {
+        "TenantId": "28bc6d77-52ea-4888-ac5e-1eacec3be425",
+        "EnvironmentName": "Production",
+        "Company": "=?base64?R3J1cG8gT2zDqQ==?=",
+        "ConfigurationName": "CLAUDE-LECTURA"
+      },
+      "oauth": {
+        "clientId": "e908fd12-4885-4e50-8e8e-a6e9e03ded81",
+        "callbackPort": 33418
+      }
+    }
+  }
+}

@@ -22,10 +22,19 @@ cliente: **Luis Huapaya** (Ceroone). Detalle técnico y estructura: [README.md](
 | Sandbox **Development_20260421** (copia de producción del 18/04/2026) | Pruebas y publicación con Ctrl+F5 (`.vscode/launch.json`) |
 | **Production** | Solo instalación por `.app` (Administración de extensiones) y el paso a paso |
 
-## Estado a 06/11/2026
+## Estado a 07/11/2026
 
-- Versión **1.0.18.0** instalada en **producción** el 05/11/2026 21:18 (hora Lima). Punto de restauración: 05/11/2026 21:04 Lima (06/11 02:04 UTC).
-- Centro **GAL (Almudévar)**. Fecha de corte con el Laravel: **04/11/2026** (Laravel detenido para GAL, confirmado por Luis).
+- Versión **1.0.23.0** en **producción** (07/11/2026). Historial: 1.0.18.0 el 05/11 21:18 Lima · 1.0.19.0 el 07/11 13:40 · 1.0.20.0–1.0.23.0 el 07/11 hacia las 15:00. Punto de restauración: 05/11/2026 21:04 Lima (06/11 02:04 UTC).
+- Centro **GAL (Almudévar)**. El Laravel está detenido para GAL (confirmado por Luis). Fecha de corte real: **05/11/2026** (el Laravel procesó el 04/11 completo; P7 resuelto).
+- **Fase 0 hecha**: 01–04/11 enlazadas como preexistentes y *Registrado* (01/11: 208 · 02/11: 265 · 03/11: 257 · 04/11: 290).
+- **Fase 1 en curso**: 05/11 con 289 borradores + 11 registradas (creados con la marca *Creado por integración Revo*); además hay **250 borradores del 06/11** (pendiente de confirmar quién lo procesó).
+- **Fase 2 empezada**: primera factura registrada GALS-000242392 (Revo 4453, 3,40 €, ALMEFECTIV, libro DvImpuestos DV-FV293397). **P8 bloqueante**: salió con Tipo de factura SII **F1**; para simplificadas lo habitual es F2. Comparar con una GALS del Laravel (p. ej. GALS-000241831) antes de registrar más; si el Laravel usaba F2, corregir la integración (S/A/O → F2, R → R5).
+- Zona horaria del usuario Ceroone en BC cambiada a Madrid (los campos de fecha/hora se guardan en UTC).
+- Regla aprendida: **no vaciar días con documentos creados por la integración** (al reimportar se enlazan como preexistentes y pierden la marca y los cobros). Si hace falta: Borrar borrador → borrar sus líneas de cobro → Vaciar → Relanzar.
+
+### Situación previa (06/11/2026)
+
+- Centro **GAL (Almudévar)**. Fecha de corte inicial con el Laravel: **04/11/2026**.
 - **Fases A, B y C hechas** (antes de empezar, instalación, configuración). Configuración traída del sandbox con el paquete RapidStart `REVO-CONFIG` y ajustada a producción:
   - grupo IVA 0 % = **IVA0** (en el sandbox era IVA00);
   - sección de tarjeta = **ALMTARJETA** (en el sandbox ALMTARJET), misma cuenta 4412890;
@@ -33,7 +42,15 @@ cliente: **Luis Huapaya** (Ceroone). Detalle técnico y estructura: [README.md](
   - método **Transferencia → Omitir** (como el Laravel);
   - Registrar automáticamente = No · Crear clientes por NIF = No · reintento 7 días · **sin tarea diaria**;
   - Producto línea de ajuste **vacío** (pendiente del cliente); tokens introducidos y *Probar conexión* OK.
-- **Siguiente: fase 0 (modo espejo)** en sesión con Luis: relanzar el 03/11/2026 (día ya procesado por el Laravel) → todo debe quedar *Creado* con *Documento preexistente = Sí*, cobros *Omitido*, ningún borrador nuevo. Después fase 1 (borradores desde el 04/11, activar *Crear clientes por NIF*) y fase 2 (registro, auto-registro y tarea diaria).
+- **Siguiente (a 07/11)**: resolver P8; revisar las 11 registradas del 05/11 y los borradores del 06/11; completar F1.2–F1.9 y F2.2–F2.8 del registro; activar *Crear clientes por NIF*, auto-registro y tarea diaria solo tras el visto bueno de Luis.
+
+## Acceso de Claude a BC (MCP, solo lectura)
+
+- Servidor MCP oficial de BC configurado en [.mcp.json](.mcp.json) (servidor `bc-grupoole`): Production, empresa Grupo Olé, configuración **CLAUDE-LECTURA**.
+- App de Entra «BC MCP - Claude (Ceroone)» en el inquilino RALSA98 SL (= tenant de BC), Id. de cliente `e908fd12-4885-4e50-8e8e-a6e9e03ded81`, redirect `http://localhost:33418/callback`, permiso delegado Financials.ReadWrite.All con consentimiento de administrador, sin secreto.
+- En BC (página 8350) CLAUDE-LECTURA está activa, no predeterminada, con **Desbloquear herramientas de edición = No**, modo dinámico y *Data Query Tools*. Herramientas útiles: `bc_data_find_tables`, `bc_data_get_table_schema`, `bc_data_query` (consultas AL de solo lectura; tablas Revo 50400–50415).
+- En una máquina nueva: abrir Claude Code en el repo, aprobar el servidor `bc-grupoole` y `/mcp` → Authenticate con **ceroone@gruporalsa.com**. El token queda en cada máquina, no en el repo.
+- Aunque el acceso es de solo lectura, las lecturas de BC siguen siendo **con permiso del usuario**. Nunca escribir en BC.
 
 ### Pendiente de decidir con Luis (P1–P6)
 

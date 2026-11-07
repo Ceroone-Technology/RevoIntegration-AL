@@ -12,9 +12,9 @@ La integración Revo – Business Central (extensión **Revo TPV Integration 1.0
 | --- | --- |
 | Entorno | Producción, empresa GRUPO OLE RESTAURACION, S.L. |
 | Centro | GAL (Almudévar) |
-| Versión instalada | 1.0.18.0 |
+| Versión instalada | 1.0.23.0 (07/11/2026). Historial: 1.0.18.0 el 05/11/2026 21:18 · 1.0.19.0 el 07/11/2026 13:40 · 1.0.20.0 a 1.0.23.0 el 07/11/2026 hacia las 15:00 (hora aproximada indicada por el usuario) |
 | Aval de Luis Huapaya | 05/11/2026 |
-| Fecha de corte con el Laravel | 04/11/2026 (Laravel detenido para GAL, confirmado por Luis el 05/11/2026) |
+| Fecha de corte con el Laravel | Prevista 04/11/2026; real 05/11/2026: el Laravel registró el 04/11 completo (290 facturas) y se detuvo para GAL el 05/11 |
 | Punto de restauración | 05/11/2026 21:04 hora Lima (06/11/2026 02:04 UTC · 03:04 Madrid) |
 | Repositorio | [github.com/Ceroone-Technology/RevoIntegration-AL](https://github.com/Ceroone-Technology/RevoIntegration-AL) |
 
@@ -23,9 +23,9 @@ La integración Revo – Business Central (extensión **Revo TPV Integration 1.0
 | A. Antes de empezar | Hecho | 05/11/2026 | 05/11/2026 |
 | B. Instalación | Hecho | 05/11/2026 21:18 | 05/11/2026 22:30 |
 | C. Configuración inicial | Hecho | 05/11/2026 21:40 | 05/11/2026 22:51 (C11 pendiente del cliente) |
-| Fase 0: modo espejo | Pendiente | Prevista 06/11/2026, en sesión con Luis |  |
-| Fase 1: solo borradores | Pendiente |  |  |
-| Fase 2: registro | Pendiente |  |  |
+| Fase 0: modo espejo | Hecho | 06/11/2026 12:53 | 07/11/2026 16:03 |
+| Fase 1: solo borradores | En curso | 07/11/2026 (05/11 procesado al relanzar 01–05/11) |  |
+| Fase 2: registro | En curso | 07/11/2026 16:41 |  |
 
 ## A. Antes de empezar
 
@@ -90,11 +90,11 @@ Se relanzan días anteriores al corte (p. ej. 02/11/2026 y 03/11/2026) que el La
 
 | # | Prueba | Resultado esperado | Fecha y hora | Responsable | Estado | Resultado obtenido |
 | --- | --- | --- | --- | --- | --- | --- |
-| F0.1 | Relanzar día de una fecha ya procesada por el Laravel | Facturas en Creado con Documento preexistente = Sí; ningún borrador nuevo |  | Omar Carreño | Pendiente |  |
-| F0.2 | Cobros de esas facturas | Estado Omitido; ninguna línea de diario |  | Omar Carreño | Pendiente |  |
-| F0.3 | Registro de sincronizaciones | Una línea por día con el nº de facturas y el importe de Revo |  | Omar Carreño | Pendiente |  |
-| F0.4 | Comparar con el Laravel | Mismo nº de facturas e importe del día en BC |  | Omar Carreño | Pendiente |  |
-| F0.5 | Ventas → Facturas venta (borradores) | Ningún borrador nuevo |  | Omar Carreño | Pendiente |  |
+| F0.1 | Relanzar día de una fecha ya procesada por el Laravel | Facturas en Creado con Documento preexistente = Sí; ningún borrador nuevo | 07/11/2026 16:03 (Lima) | Omar Carreño | Hecho | Relanzado 01–04/11 (días del Laravel): todas las facturas enlazadas como preexistentes y en Registrado (03/11: 257; 04/11: 290). Con la 1.0.21.0 el relanzar actualiza los estados solo; antes hacía falta Actualizar estados |
+| F0.2 | Cobros de esas facturas | Estado Omitido; ninguna línea de diario | 07/11/2026 16:03 (Lima) | Omar Carreño | Hecho | Facturas preexistentes con Pagos pendientes = 0: cobros omitidos, sin líneas de diario |
+| F0.3 | Registro de sincronizaciones | Una línea por día con el nº de facturas y el importe de Revo | 07/11/2026 16:03 (Lima) | Omar Carreño | Hecho | Una línea por día (01–05/11) con facturas, registradas, en borrador y errores; sin errores de importación |
+| F0.4 | Comparar con el Laravel | Mismo nº de facturas e importe del día en BC | 07/11/2026 16:03 (Lima) | Omar Carreño | Hecho | Cada factura de Revo de 01–04/11 tiene su factura registrada del Laravel (Registradas = facturas del día) |
+| F0.5 | Ventas → Facturas venta (borradores) | Ningún borrador nuevo | 07/11/2026 16:03 (Lima) | Omar Carreño | Hecho | Ningún borrador nuevo para 01–04/11. Los borradores nuevos son solo del 05/11 (fase 1) |
 
 ## Fase 1: solo borradores
 
@@ -102,12 +102,12 @@ Desde la fecha de corte (04/11/2026) la integración crea los borradores y las l
 
 | # | Funcionalidad | Qué comprobar | Fecha y hora | Responsable | Estado | Resultado obtenido |
 | --- | --- | --- | --- | --- | --- | --- |
-| F1.1 | Borrador de factura | Nº = nº de Revo · cliente genérico o por NIF · líneas con el producto de Revo en la descripción · forma de pago del cobro · Hora Factura · dimensiones |  | Omar Carreño | Pendiente |  |
+| F1.1 | Borrador de factura | Nº = nº de Revo · cliente genérico o por NIF · líneas con el producto de Revo en la descripción · forma de pago del cobro · Hora Factura · dimensiones | 07/11/2026 16:41 (Lima) | Omar Carreño | Hecho | Borrador GALS-000242110: nº y nº de registro = nº de Revo (serie GALS), cliente X89000000, líneas 8_AL/9_AL con la descripción de Revo, IVA10, UDS, total 4,30 = Revo, Hora factura 07:03:39, forma de pago ALMTARJETA, términos CON |
 | F1.2 | Abono (letras R y X) | Se crea como abono con precios positivos |  | Omar Carreño | Pendiente |  |
 | F1.3 | Excluidas (I, L) | Estado Excluido: no se crean salvo Forzar subida |  | Omar Carreño | Pendiente |  |
 | F1.4 | Cliente por NIF | Cliente nuevo con nº = NIF y Cliente creado = Sí |  | Omar Carreño | Pendiente |  |
 | F1.5 | Supergrupo sin mapear | Con error, el mensaje dice cuál |  | Omar Carreño | Pendiente |  |
-| F1.6 | Cobros | Línea en la sección ALM… de su método, Liquida a = la factura, sin registrar; con cliente pasarela, segunda línea a la pasarela |  | Omar Carreño | Pendiente |  |
+| F1.6 | Cobros | Línea en la sección ALM… de su método, Liquida a = la factura, sin registrar; con cliente pasarela, segunda línea a la pasarela | 07/11/2026 16:03 (Lima) | Omar Carreño | En curso | 05/11: borradores y líneas de cobro borrados y recreados con la 1.0.22.0 (ver Incidencias). Falta revisar las líneas en las secciones ALM… con Luis |
 | F1.7 | Las tres diferencias | Dif. pagos, Dif. líneas y Dif. vs BC a 0 en las que cuadran; en rojo las que no |  | Omar Carreño | Pendiente |  |
 | F1.8 | Vistas | Pendientes por subir, Con error e Incidencia de pagos muestran los casos esperados |  | Omar Carreño | Pendiente |  |
 | F1.9 | Ticket a 0 sin líneas | Con producto de ajuste configurado: se crea con 1 línea a 0; sin él: error con aviso |  | Omar Carreño | Pendiente |  |
@@ -118,12 +118,12 @@ La integración registra las facturas que cuadran con Revo y se envían al SII d
 
 | # | Funcionalidad | Qué comprobar | Fecha y hora | Responsable | Estado | Resultado obtenido |
 | --- | --- | --- | --- | --- | --- | --- |
-| F2.1 | Registrar si cuadra con 3–5 facturas | Pasan a Registrado; Hora Factura visible en el histórico |  | Omar Carreño | Pendiente |  |
+| F2.1 | Registrar si cuadra con 3–5 facturas | Pasan a Registrado; Hora Factura visible en el histórico | 07/11/2026 16:41 (Lima) | Omar Carreño | En curso | Primera factura registrada: GALS-000242392 (Revo 4453) con Registrar si cuadra. Histórico: nº = nº de Revo, Hora factura 17:10:37, líneas 9_AL, total 3,40 = Revo, forma de pago ALMEFECTIV. Resto del 05/11 en espera de P8 (tipo de factura SII) |
 | F2.2 | Factura que no cuadra | Queda en borrador con su Motivo sin registrar |  | Omar Carreño | Pendiente |  |
 | F2.3 | Forzar registro | Se registra; quedan rellenos Registro forzado, Descuadre ignorado y Forzado por |  | Omar Carreño | Pendiente |  |
 | F2.4 | Error de configuración | No se puede forzar; el motivo indica qué falta |  | Omar Carreño | Pendiente |  |
 | F2.5 | Abono | Se registra; si sale el aviso del nº de factura corregida, se pulsa Sí |  | Omar Carreño | Pendiente |  |
-| F2.6 | Envío al SII | En DvImpuestos la factura sale una sola vez |  | Omar Carreño | Pendiente |  |
+| F2.6 | Envío al SII | En DvImpuestos la factura sale una sola vez | 07/11/2026 16:41 (Lima) | Omar Carreño | En curso | GALS-000242392 con nº de libro DV-FV293397 (DvImpuestos). Tipo de factura F1, régimen 01. Falta que contabilidad confirme en DvImpuestos que sale una sola vez y decidir F1/F2 (P8) |
 | F2.7 | Modo automático | Activar Registrar automáticamente si cuadra → Relanzar día → se registran solas |  | Omar Carreño | Pendiente |  |
 | F2.8 | Tarea diaria | Crear tarea diaria y revisar al día siguiente el Registro de sincronizaciones |  | Omar Carreño | Pendiente |  |
 
@@ -139,6 +139,8 @@ Puntos abiertos para la sesión del 06/11/2026; ninguno bloquea la fase 0.
 | P4 | Letra O (offline) | Va a la serie S (GALS), como el Laravel; en producción existe la serie GALO. ¿GALO o GALS? |  | Pendiente |
 | P5 | Numeración de los cobros (H2) | La serie DIAG-CBRO repite el nº de documento en los cobros de una sección. ¿Renumerar o un nº por cobro? |  | Pendiente |
 | P6 | Clientes pasarela | Pendientes de crear por el cliente (C11); hasta entonces el cobro va contra la contrapartida de la sección |  | Pendiente |
+| P7 | Fecha de corte real con el Laravel | Facturas del 04/11 (p. ej. GALS-000242109) están registradas por el Laravel. ¿Hasta qué día procesó? La integración las enlaza como preexistentes, sin duplicar | Comprobado: el Laravel registró el 04/11 completo (290). Corte real 05/11 | Hecho |
+| P8 | Tipo de factura SII de las simplificadas | La integración no rellena el tipo y BC pone F1. Para simplificadas (S, A, O) lo habitual es F2 y para rectificativas simplificadas R5. Comparar con una GALS registrada por el Laravel (p. ej. GALS-000241831) |  | Pendiente |
 
 ## Incidencias y decisiones
 
@@ -154,3 +156,13 @@ Puntos abiertos para la sesión del 06/11/2026; ninguno bloquea la fase 0.
 | 05/11/2026 22:15 | Incidencia | Al corregir en el paquete la sección de las 3 líneas de tarjeta a ALMTARJETA, el editor de paquetes responde "El valor de Sección diario 'ALMTARJETA' no existe", aunque la sección figura en el Excel de producción. Grupo IVA 0 % ya corregido a IVA0 (50400 sin errores) | Dejar la sección vacía en esas 3 líneas, aplicar el paquete y asignar ALMTARJETA desde Mapeo métodos de pago del centro GAL (lookup filtrado por COBROS). Así se conservan los nombres exactos de los métodos Revo | Omar Carreño |
 | 05/11/2026 22:35 | Decisión | En el mapeo importado, el método Transferencia estaba como Crear línea diario (sección ALMTRASNFE, sin contrapartida); el Laravel omitía Transferencia, Transferencia Bancaria y Crédito | Transferencia cambiada a Omitir en producción. Bizum se deja en Crear línea diario (ALMBIZUM) hasta que Luis confirme su contrapartida | Omar Carreño |
 | 05/11/2026 22:54 | Decisión | Fases A, B y C terminadas. Desde la fase 0 la integración ya procesa datos reales de Revo en producción | Las fases 0, 1 y 2 se hacen en sesión con Luis supervisando, a partir del 06/11/2026. Se le envía el registro y los puntos pendientes de decidir | Omar Carreño |
+| 06/11/2026 12:53 | Incidencia | Relanzar el 03/11 importa también las facturas del 04/11 (la API de Revo se consulta del día al día siguiente, desfase fecha fin = 1). Relanzar solo procesa el día pedido, así que las del 04/11 quedan en Pendiente | No reprocesar las del 04/11 hasta la fase 1: crearían borradores. Revisar en la fase 1 si el desfase debe ser 0 | Omar Carreño |
+| 07/11/2026 13:20 | Incidencia | Tras relanzar el 03/11, las preexistentes quedaban en Creado y Abrir documento venta mostraba "El borrador ... se eliminó" porque Relanzar día no actualizaba estados. Con Actualizar estados pasaron a Registrado. La GALS-000242109 (04/11) está registrada por el Laravel | Corregido en 1.0.19.0. Fecha de corte real a confirmar con Luis (P7) | Omar Carreño |
+| 07/11/2026 13:40 | Decisión | Versión 1.0.19.0: Relanzar día actualiza estados al terminar (como la tarea diaria) y Abrir documento venta abre la factura registrada si el borrador no existe | Instalada en producción el 07/11/2026 13:40 (Completado) sin prueba previa en el sandbox, por decisión del usuario en la reunión con Luis | Omar Carreño |
+| 07/11/2026 tarde | Incidencia | Al relanzar 01–05/11 se procesó también el 05/11 (no lo procesó el Laravel): 299 borradores nuevos y 1 error, con sus líneas de cobro. Con ello empezó la fase 1 | No registrar nada del 05/11 hasta revisarlo con Luis | Omar Carreño |
+| 07/11/2026 tarde | Incidencia | Con la 1.0.19.0 el relanzar seguía sin actualizar estados: el recorrido se cortaba tras la primera factura porque modificaba el Estado por el que filtraba (afectaba también a la tarea diaria) | Corregido en 1.0.21.0 (primero se reúnen las facturas y luego se actualizan). 1.0.20.0 añade Vaciar facturas Revo (borra de la tabla intermedia las facturas de la vista con sus líneas, pagos y errores; no toca BC ni la configuración). Validado al relanzar 01–04/11 | Omar Carreño |
+| 07/11/2026 tarde | Decisión | Identificar en BC los documentos creados por la integración | 1.0.22.0: campo Creado por integración Revo en borradores, facturas y abonos registrados (se copia al registrar), visible y filtrable en Facturas venta, Abonos venta y sus históricos. Al instalar se marcan los ya creados | Omar Carreño |
+| 07/11/2026 tarde | Incidencia | Tras vaciar y reimportar el 05/11, sus borradores (creados por la integración) quedaron como preexistentes y sin la marca Creado por integración Revo | Se borraron los borradores del 05/11 con Borrar borrador (sin documentos vacíos), se eliminaron sus líneas de cobro sin registrar, se vació el 05/11 y se relanzó: recreados con la marca y sus cobros. Regla: no vaciar días con documentos creados por la integración | Omar Carreño |
+| 07/11/2026 tarde | Decisión | 1.0.23.0: campos Usuario creador y Fecha/hora de subida en borradores, facturas y abonos (se copian al registrar), visibles en Facturas venta, Abonos venta y sus históricos. Las horas se veían en hora de Lima porque el usuario de BC tenía esa zona horaria | Zona horaria del usuario Ceroone cambiada a Madrid en Mi configuración (BC guarda en UTC y muestra en la zona de cada usuario) | Omar Carreño |
+| 07/11/2026 16:41 | Incidencia | La primera factura registrada (GALS-000242392) salió con Tipo de factura SII F1; para una simplificada lo habitual es F2 | No registrar más hasta comparar con una GALS del Laravel (P8). Si el Laravel usaba F2: corregir la integración y revisar la GALS-000242392 en DvImpuestos | Omar Carreño |
+| 07/11/2026 17:34 | Decisión | Acceso de lectura de Claude a BC Production mediante el servidor MCP oficial de Business Central, para revisar datos sin depender de capturas | App de Entra «BC MCP - Claude (Ceroone)» en el inquilino RALSA98 SL (multiinquilino, permiso delegado Financials.ReadWrite.All con consentimiento de administrador, sin secreto). En BC, configuración MCP CLAUDE-LECTURA activa, no predeterminada, con herramientas de edición bloqueadas (solo lectura), modo dinámico y consulta de datos. Claude Code se conecta con el usuario ceroone@gruporalsa.com (configuración .mcp.json en el repo, válida también en el Mac). Lectura de prueba correcta (GALS-000242392 y tabla intermedia) | Omar Carreño |

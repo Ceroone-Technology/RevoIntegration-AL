@@ -228,6 +228,22 @@ page 50410 "Revo Invoices"
                     Orchestrator.OpenRelaunchDialog(Rec."Center Code", Rec."Invoice Date");
                 end;
             }
+            action(DeleteStaging)
+            {
+                Caption = 'Vaciar facturas Revo';
+                Image = Delete;
+                ToolTip = 'Borra de la tabla intermedia las facturas Revo de la vista actual (según los filtros) con sus líneas, pagos y errores, para volver a importarlas con Relanzar día. No borra la configuración ni nada de BC.';
+
+                trigger OnAction()
+                var
+                    RevoHeader: Record "Revo Invoice Header";
+                    Orchestrator: Codeunit "Revo Sync Orchestrator";
+                begin
+                    RevoHeader.CopyFilters(Rec);
+                    Orchestrator.DeleteStagingHeaders(RevoHeader);
+                    CurrPage.Update(false);
+                end;
+            }
         }
         area(Navigation)
         {
