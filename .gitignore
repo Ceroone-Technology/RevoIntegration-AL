@@ -11,3 +11,6 @@ output/
 
 # Archivos temporales de Office (Word abierto)
 ~$*
+
+# Archivos de sistema de macOS
+.DS_Store
