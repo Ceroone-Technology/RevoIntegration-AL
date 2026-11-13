@@ -22,46 +22,34 @@ cliente: **Luis Huapaya** (Ceroone). Detalle técnico y estructura: [README.md](
 | Sandbox **Development_20260421** (copia de producción del 18/04/2026) | Pruebas y publicación con Ctrl+F5 (`.vscode/launch.json`) |
 | **Production** | Solo instalación por `.app` (Administración de extensiones) y el paso a paso |
 
-## Estado a 07/11/2026
+## Estado a 13/11/2026
 
-- Versión **1.0.23.0** en **producción** (07/11/2026). Historial: 1.0.18.0 el 05/11 21:18 Lima · 1.0.19.0 el 07/11 13:40 · 1.0.20.0–1.0.23.0 el 07/11 hacia las 15:00. Punto de restauración: 05/11/2026 21:04 Lima (06/11 02:04 UTC).
-- Centro **GAL (Almudévar)**. El Laravel está detenido para GAL (confirmado por Luis). Fecha de corte real: **05/11/2026** (el Laravel procesó el 04/11 completo; P7 resuelto).
-- **Fase 0 hecha**: 01–04/11 enlazadas como preexistentes y *Registrado* (01/11: 208 · 02/11: 265 · 03/11: 257 · 04/11: 290).
-- **Fase 1 en curso**: 05/11 con 289 borradores + 11 registradas (creados con la marca *Creado por integración Revo*); además hay **250 borradores del 06/11** (pendiente de confirmar quién lo procesó).
-- **Fase 2 empezada**: primera factura registrada GALS-000242392 (Revo 4453, 3,40 €, ALMEFECTIV, libro DvImpuestos DV-FV293397). **P8 bloqueante**: salió con Tipo de factura SII **F1**; para simplificadas lo habitual es F2. Comparar con una GALS del Laravel (p. ej. GALS-000241831) antes de registrar más; si el Laravel usaba F2, corregir la integración (S/A/O → F2, R → R5).
-- Zona horaria del usuario Ceroone en BC cambiada a Madrid (los campos de fecha/hora se guardan en UTC).
-- Regla aprendida: **no vaciar días con documentos creados por la integración** (al reimportar se enlazan como preexistentes y pierden la marca y los cobros). Si hace falta: Borrar borrador → borrar sus líneas de cobro → Vaciar → Relanzar.
-
-### Situación previa (06/11/2026)
-
-- Centro **GAL (Almudévar)**. Fecha de corte inicial con el Laravel: **04/11/2026**.
-- **Fases A, B y C hechas** (antes de empezar, instalación, configuración). Configuración traída del sandbox con el paquete RapidStart `REVO-CONFIG` y ajustada a producción:
-  - grupo IVA 0 % = **IVA0** (en el sandbox era IVA00);
-  - sección de tarjeta = **ALMTARJETA** (en el sandbox ALMTARJET), misma cuenta 4412890;
-  - serie S = **GALS** (en el sandbox V-FAC+); N = GALN; R = GALR;
-  - método **Transferencia → Omitir** (como el Laravel);
-  - Registrar automáticamente = No · Crear clientes por NIF = No · reintento 7 días · **sin tarea diaria**;
-  - Producto línea de ajuste **vacío** (pendiente del cliente); tokens introducidos y *Probar conexión* OK.
-- **Siguiente (a 07/11)**: resolver P8; revisar las 11 registradas del 05/11 y los borradores del 06/11; completar F1.2–F1.9 y F2.2–F2.8 del registro; activar *Crear clientes por NIF*, auto-registro y tarea diaria solo tras el visto bueno de Luis.
+- Versión **1.0.25.0** en **producción** (PTE, instalada el 13/11 por la mañana). Historial: 1.0.18.0 el 05/11 · 1.0.19.0–1.0.23.0 el 07/11 · 1.0.24.0 el 12/11 23:54 Lima · 1.0.25.0 el 13/11.
+- **12 centros en 7 empresas** (los que procesaba el Laravel, ya detenido): Grupo Olé (GAL, GOL, GVI), Duffy (DBU), La Candelaria (CCF), Cebrian (CCA), Ibérica Stadium (SCA), Zurolé (ZCA, ZSM), Rosviple (RLA, ROL, ROZ). Fase 0 (espejo) y fase 1 (borradores) hechas en todos; facturas creadas en borrador y cobros en el diario sin registrar.
+- **Tareas diarias** a la hora del Laravel, escalonadas 5 min (hora Madrid = Lima + 6 h): Grupo Olé 05:55 · Duffy 06:00 · La Candelaria 06:05 · Cebrian 06:10 · Ibérica 06:15 · Zurolé 06:20 · Rosviple 06:25. **Nunca dos relanzamientos a la vez** con secciones compartidas (H4).
+- **Clientes pasarela** (reuniones con Luis del 12/11): por centro y método con cuenta en TESORERIAS (VISA, RESTAURANTE, SODEXO, GOURMET, MARCHANDO, UBER, GLOVO, VOLVEREMOS, COVER, IMPAGADO) un grupo registro cliente y un cliente `PAS-<centro>-<método>` (Cta. clientes = Cta. efectos = 4412xxN / 4415xx1, NAC/NAC, CON, forma de pago **EFECTO**) y su mapeo. 120 en total, aplicados con `config/REVO-PAS-<EMPRESA>.rapidstart` (generados con `scripts/build_rapidstart_gateways.py`). Sin pasarela: Transferencia, Crédito, Bizum (Omitir), Efectivo y Glovo efectivo (pendiente de Luis) y Propinas (sin cuenta).
+- **1.0.25.0**: la línea de la pasarela es de tipo **Efecto** (lo pidió Luis; la 1.0.24.0 la hacía Factura), Nº efecto = orden del cobro en la factura, queda en Cartera. Probado en el sandbox con GALS-000224819 (efecto en Cartera, 4412890 debe). Botón **Rehacer cobros** (Facturas Revo): rehace los cobros sin registrar con la configuración actual.
+- **Siguiente**: prueba con Luis en producción (2 facturas: Rehacer cobros → registrar factura → registrar sus 2 líneas filtrando por *Nº documento externo*, porque el Nº documento se repite en la sección, H2); 5 más para los usuarios; Rehacer cobros del 05 al 12/11 en los 12 centros; fase 2 (registro automático) con el OK de Luis.
+- Reglas aprendidas: no vaciar días con documentos creados por la integración; en el sandbox la app está publicada como **Dev** (publicar con VS Code: cargar el `.app` da AVS0109); en producción es PTE (cargar el `.app`). En Duffy la serie de contactos CONT estaba desfasada (corregido a CONT11281 el 13/11).
 
 ## Acceso de Claude a BC (MCP, solo lectura)
 
-- Servidor MCP oficial de BC configurado en [.mcp.json](.mcp.json) (servidor `bc-grupoole`): Production, empresa Grupo Olé, configuración **CLAUDE-LECTURA**.
+- Servidores MCP oficiales de BC en [.mcp.json](.mcp.json), configuración **CLAUDE-LECTURA**: uno por empresa de producción (`bc-grupoole`, `bc-duffy`, `bc-lacandelaria`, `bc-cebrian`, `bc-iberica`, `bc-zurole`, `bc-rosviple`) y `bc-sandbox` (Development_20260421, Grupo Olé).
 - App de Entra «BC MCP - Claude (Ceroone)» en el inquilino RALSA98 SL (= tenant de BC), Id. de cliente `e908fd12-4885-4e50-8e8e-a6e9e03ded81`, redirect `http://localhost:33418/callback`, permiso delegado Financials.ReadWrite.All con consentimiento de administrador, sin secreto.
-- En BC (página 8350) CLAUDE-LECTURA está activa, no predeterminada, con **Desbloquear herramientas de edición = No**, modo dinámico y *Data Query Tools*. Herramientas útiles: `bc_data_find_tables`, `bc_data_get_table_schema`, `bc_data_query` (consultas AL de solo lectura; tablas Revo 50400–50415).
-- En una máquina nueva: abrir Claude Code en el repo, aprobar el servidor `bc-grupoole` y `/mcp` → Authenticate con **ceroone@gruporalsa.com**. El token queda en cada máquina, no en el repo.
+- En BC (página 8350, en cada empresa y en el sandbox) CLAUDE-LECTURA está activa, no predeterminada, con **Desbloquear herramientas de edición = No**, modo dinámico y *Data Query Tools*. Herramientas útiles: `bc_data_find_tables`, `bc_data_get_table_schema`, `bc_data_query` (consultas AL de solo lectura; tablas Revo 50400–50415).
+- En una máquina nueva: abrir Claude Code en el repo, aprobar los servidores `bc-*` y `/mcp` → Authenticate (en cada uno) con **ceroone@gruporalsa.com**. El token queda en cada máquina, no en el repo.
 - Aunque el acceso es de solo lectura, las lecturas de BC siguen siendo **con permiso del usuario**. Nunca escribir en BC.
 
-### Pendiente de decidir con Luis (P1–P6)
+### Pendiente de decidir con Luis
 
-1. Producto de la línea de ajuste para tickets a 0 sin líneas.
-2. Bizum: la sección ALMBIZUM no tiene contrapartida en producción (¿cuenta u omitir?).
-3. Líneas al 0 % de IVA: ¿IVA0 o NO SUJETO (SII)?
-4. Letra O (offline): ¿serie GALO o GALS (como el Laravel)?
-5. H2: la serie DIAG-CBRO repite el nº de documento en los cobros de una sección.
-6. Clientes pasarela: pendientes de que el cliente los cree.
+1. Producto de la línea de ajuste para tickets a 0 sin líneas (P1).
+2. Líneas al 0 % de IVA: ¿IVA0 o NO SUJETO (SII)?; letra O (offline): ¿serie propia o la S?
+3. H2: la serie DIAG-CBRO repite el nº de documento en los cobros de una sección.
+4. Efectivo con pasarela o no; Propinas sin cuenta.
+5. Cuentas de Cartera de los grupos pasarela (descontados, en gestión de cobro, impagados): vacías; solo hacen falta si los efectos se remesan o descuentan.
+6. Activar registro automático (fase 2).
 
-Otros pendientes: regla de ventas de madrugada (día anterior), generador de casos de prueba, recuperación de líneas en otra fecha.
+Ver la lista completa (P1–P10) en el registro.
 
 ## Registro del paso a producción
 
@@ -81,15 +69,16 @@ Otros pendientes: regla de ventas de madrugada (día anterior), generador de cas
 
 ## Compilar
 
-- **macOS**: compilador del AL Language en `~/.vscode/extensions/ms-dynamics-smb.al-*/bin/darwin/alc`:
+- **macOS**: la extensión AL 18.x ya no trae `alc` para darwin. Compilar desde VS Code con **AL: Package** (Cmd+Shift+P), que deja el `.app` en la raíz del repo. Sandbox: **Ejecutar → Ejecutar sin depuración** (publica como Dev). Producción: el usuario carga el `.app` en Administración de extensiones.
+- **Windows**: `alc.exe` en `%USERPROFILE%\.vscode\extensions\ms-dynamics-smb.al-*\bin\win32\`:
   `alc /project:"$PWD" /packagecachepath:"$PWD/.alpackages" /out:"$PWD/Ceroone_Revo TPV Integration_<versión>.app"`
-- **Windows**: `alc.exe` en `%USERPROFILE%\.vscode\extensions\ms-dynamics-smb.al-*\bin\win32\` con las mismas opciones (rutas completas desde PowerShell).
 - `.alpackages` no está en el repo: en una máquina nueva, *AL: Download symbols* desde VS Code (sandbox) o `pwsh ./scripts/Get-Symbols.ps1`.
 
 ## Decisiones técnicas que conviene recordar
 
 - La integración crea facturas/abonos en borrador con nº = nº de Revo y los registra solo si cuadran con Revo (importe y líneas); si no, *Forzar registro* tras revisión.
-- Cobros: líneas de diario sin registrar en COBROS/ALM…; con *Cliente pasarela*, dos líneas con el mismo nº de documento (BC no admite cliente contra cliente en una línea).
+- Cobros: líneas de diario sin registrar en COBROS/ALM…; con *Cliente pasarela*, dos líneas con el mismo nº de documento (BC no admite cliente contra cliente en una línea): Pago al cliente que liquida la factura y **Efecto** al cliente pasarela (Nº efecto 1, 2…, forma de pago del cliente pasarela, que debe crear efectos; BC España lo lleva a la *Cta. efectos* del grupo). Devoluciones: Abono a la pasarela.
+- Cobro negativo en una factura (cambio devuelto con otro método, H5): línea positiva sin tipo ni liquidación.
 - Facturas sin cobros (a 0, invitaciones): forma de pago del centro sin contrapartida (ALMEFECTIV). Forma de pago con contrapartida → cobraría dos veces.
 - Borrar un borrador (botón o página de BC) quita antes el nº de registro para que BC no cree el documento vacío (H1); la factura vuelve a Pendiente y se recrea con el mismo nº.
 - Tickets a 0 sin líneas: se suben y registran solos con línea de ajuste a 0. Sin líneas con importe: *Forzar subida* con línea de ajuste hasta el total.

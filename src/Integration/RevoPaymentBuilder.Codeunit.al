@@ -6,6 +6,10 @@
 ///  - Plantilla/sección por centro + método (antes: GUID de journal por centro en ClientNameEnum).
 ///  - Fecha registro = max(fecha pago, fecha factura).
 ///  - Factura: Pago, importe negativo, liquida Factura nº Revo. Abono: Reembolso, importe positivo, liquida Abono.
+///  - Importe = cobro de Revo con el signo contrario; si sale al revés de lo normal (cambio devuelto con otro método),
+///    la línea va sin tipo de documento ni liquidación (H5).
+///  - Con cliente pasarela: segunda línea a la pasarela, tipo Efecto (o Abono si es devolución), con la factura Revo en la
+///    descripción; la forma de pago es la del cliente pasarela (debe crear efectos).
 /// </summary>
 codeunit 50405 "Revo Payment Builder"
 {
@@ -25,6 +29,7 @@ codeunit 50405 "Revo Payment Builder"
         PreExistingTxt: Label 'Documento preexistente en BC: pagos no generados para evitar duplicados.';
         CashierTxt: Label 'Cashier: %1', Comment = '%1 = caja';
         PaymentMethodTxt: Label 'Metodo de pago: %1', Comment = '%1 = método de pago';
+        GatewayDescriptionTxt: Label 'Factura %1 - %2', Comment = '%1 = nº factura Revo, %2 = método de pago';
 
     procedure CreateJournalLine(var RevoPayment: Record "Revo Payment")
     var
@@ -34,7 +39,10 @@ codeunit 50405 "Revo Payment Builder"
         GenJournalBatch: Record "Gen. Journal Batch";
         GenJournalLine: Record "Gen. Journal Line";
         LastGenJournalLine: Record "Gen. Journal Line";
+        LineAmount: Decimal;
+        GatewayLineNo: Integer;
         IsCreditMemo: Boolean;
+        IsReversed: Boolean;
     begin
         RevoHeader.Get(RevoPayment."Header Entry No.");
         if not (RevoHeader.Status in [RevoHeader.Status::Created, RevoHeader.Status::Posted]) then
@@ -58,6 +66,11 @@ codeunit 50405 "Revo Payment Builder"
         GenJournalBatch.Get(PayMethodMapping."Journal Template Name", PayMethodMapping."Journal Batch Name");
         RevoCenter.Get(RevoPayment."Center Code");
         IsCreditMemo := RevoHeader."Sales Document Type" = RevoHeader."Sales Document Type"::"Credit Memo";
+        // Importe de la línea = cobro de Revo con el signo contrario: un cobro de factura (+) abona al cliente (−) y
+        // uno de abono (−) le carga (+). Un cobro negativo en una factura (cambio devuelto con otro método) da una
+        // línea positiva: ya no es un Pago que liquide la factura, sino un cargo suelto (H5).
+        LineAmount := -RevoPayment.Amount;
+        IsReversed := (IsCreditMemo and (LineAmount < 0)) or ((not IsCreditMemo) and (LineAmount > 0));
 
         LastGenJournalLine.SetRange("Journal Template Name", GenJournalBatch."Journal Template Name");
         LastGenJournalLine.SetRange("Journal Batch Name", GenJournalBatch.Name);
@@ -70,10 +83,13 @@ codeunit 50405 "Revo Payment Builder"
         GenJournalLine.SetUpNewLine(LastGenJournalLine, 0, true);
 
         GenJournalLine.Validate("Posting Date", GetPostingDate(RevoPayment, RevoHeader));
-        if IsCreditMemo then
-            GenJournalLine.Validate("Document Type", GenJournalLine."Document Type"::Refund)
+        if IsReversed then
+            GenJournalLine.Validate("Document Type", GenJournalLine."Document Type"::" ")
         else
-            GenJournalLine.Validate("Document Type", GenJournalLine."Document Type"::Payment);
+            if IsCreditMemo then
+                GenJournalLine.Validate("Document Type", GenJournalLine."Document Type"::Refund)
+            else
+                GenJournalLine.Validate("Document Type", GenJournalLine."Document Type"::Payment);
         GenJournalLine.Validate("Account Type", GenJournalLine."Account Type"::Customer);
         GenJournalLine.Validate("Account No.", RevoHeader."Customer No.");
         // Con serie en la sección se respeta su numeración (la contabilización exige secuencia).
@@ -82,17 +98,17 @@ codeunit 50405 "Revo Payment Builder"
         GenJournalLine."External Document No." := CopyStr(RevoHeader."Revo Invoice No.", 1, MaxStrLen(GenJournalLine."External Document No."));
         GenJournalLine.Description := CopyStr(StrSubstNo(CashierTxt, RevoPayment.Cashier), 1, MaxStrLen(GenJournalLine.Description));
         GenJournalLine.Comment := CopyStr(StrSubstNo(PaymentMethodTxt, RevoPayment."Payment Method"), 1, MaxStrLen(GenJournalLine.Comment));
-        if IsCreditMemo then
-            GenJournalLine.Validate(Amount, Abs(RevoPayment.Amount))
-        else
-            GenJournalLine.Validate(Amount, -Abs(RevoPayment.Amount));
+        GenJournalLine.Validate(Amount, LineAmount);
 
         // Asignación directa: el documento aún es borrador; la liquidación se resuelve al registrar.
-        if IsCreditMemo then
-            GenJournalLine."Applies-to Doc. Type" := GenJournalLine."Applies-to Doc. Type"::"Credit Memo"
-        else
-            GenJournalLine."Applies-to Doc. Type" := GenJournalLine."Applies-to Doc. Type"::Invoice;
-        GenJournalLine."Applies-to Doc. No." := RevoHeader."Sales Document No.";
+        // Un cargo suelto (IsReversed) no puede liquidar el documento: se queda abierto en el cliente.
+        if not IsReversed then begin
+            if IsCreditMemo then
+                GenJournalLine."Applies-to Doc. Type" := GenJournalLine."Applies-to Doc. Type"::"Credit Memo"
+            else
+                GenJournalLine."Applies-to Doc. Type" := GenJournalLine."Applies-to Doc. Type"::Invoice;
+            GenJournalLine."Applies-to Doc. No." := RevoHeader."Sales Document No.";
+        end;
 
         if PayMethodMapping."Payment Method Code" <> '' then
             GenJournalLine.Validate("Payment Method Code", PayMethodMapping."Payment Method Code");
@@ -105,13 +121,15 @@ codeunit 50405 "Revo Payment Builder"
             GenJournalLine."Shortcut Dimension 1 Code", GenJournalLine."Shortcut Dimension 2 Code");
         OnBeforeInsertGenJournalLine(GenJournalLine, RevoPayment, RevoHeader);
         GenJournalLine.Insert(true);
+        GatewayLineNo := 0;
         if PayMethodMapping."Gateway Customer No." <> '' then
-            InsertGatewayLine(GenJournalLine, PayMethodMapping."Gateway Customer No.", RevoCenter);
+            GatewayLineNo := InsertGatewayLine(GenJournalLine, PayMethodMapping."Gateway Customer No.", RevoCenter, RevoHeader, RevoPayment);
 
         RevoPayment.Status := RevoPayment.Status::Created;
         RevoPayment."Journal Template Name" := GenJournalLine."Journal Template Name";
         RevoPayment."Journal Batch Name" := GenJournalLine."Journal Batch Name";
         RevoPayment."Journal Line No." := GenJournalLine."Line No.";
+        RevoPayment."Gateway Journal Line No." := GatewayLineNo;
         RevoPayment."Error Message" := '';
         RevoPayment."Processed At" := CurrentDateTime();
         RevoPayment.Modify(true);
@@ -119,10 +137,13 @@ codeunit 50405 "Revo Payment Builder"
 
     /// <summary>
     /// Cobro con pasarela: línea al cliente pasarela por el importe contrario y con el mismo nº de documento, de modo
-    /// que el documento cuadra y el importe queda pendiente en la pasarela hasta su liquidación. Sin tipo de documento:
-    /// un "Pago" en positivo a un cliente no se puede registrar.
+    /// que el documento cuadra y el importe queda pendiente en la pasarela hasta su liquidación. Tipo de documento
+    /// Efecto si carga a la pasarela (cobro), para que quede en Cartera y se liquide desde allí (reunión con Luis del
+    /// 12/11/2026), y Abono si le abona (devolución). Nº efecto = orden del cobro en la factura Revo (1, 2…), para que
+    /// no se repita si una factura tiene varios cobros a la misma pasarela. Forma de pago = la del cliente pasarela.
+    /// La factura de Revo va en Nº documento externo y en la descripción, para verla en los movimientos de la pasarela.
     /// </summary>
-    local procedure InsertGatewayLine(PaymentLine: Record "Gen. Journal Line"; GatewayCustomerNo: Code[20]; RevoCenter: Record "Revo Center")
+    local procedure InsertGatewayLine(PaymentLine: Record "Gen. Journal Line"; GatewayCustomerNo: Code[20]; RevoCenter: Record "Revo Center"; RevoHeader: Record "Revo Invoice Header"; RevoPayment: Record "Revo Payment"): Integer
     var
         GatewayLine: Record "Gen. Journal Line";
     begin
@@ -132,21 +153,39 @@ codeunit 50405 "Revo Payment Builder"
         GatewayLine."Line No." := PaymentLine."Line No." + 10000;
         GatewayLine.SetUpNewLine(PaymentLine, PaymentLine.Amount, true);
         GatewayLine.Validate("Posting Date", PaymentLine."Posting Date");
-        GatewayLine.Validate("Document Type", GatewayLine."Document Type"::" ");
-        GatewayLine."Document No." := PaymentLine."Document No.";
         GatewayLine.Validate("Account Type", GatewayLine."Account Type"::Customer);
         GatewayLine.Validate("Account No.", GatewayCustomerNo);
         GatewayLine.Validate("Bal. Account Type", GatewayLine."Bal. Account Type"::"G/L Account");
         GatewayLine.Validate("Bal. Account No.", '');
         GatewayLine."External Document No." := PaymentLine."External Document No.";
-        GatewayLine.Description := PaymentLine.Description;
         GatewayLine.Comment := PaymentLine.Comment;
         GatewayLine.Validate(Amount, -PaymentLine.Amount);
-        if PaymentLine."Payment Method Code" <> '' then
+        // La forma de pago es la del cliente pasarela (la trae Account No.); solo si no tiene, la del cobro.
+        if (GatewayLine."Payment Method Code" = '') and (PaymentLine."Payment Method Code" <> '') then
             GatewayLine.Validate("Payment Method Code", PaymentLine."Payment Method Code");
+        if GatewayLine.Amount > 0 then begin
+            GatewayLine.Validate("Document Type", GatewayLine."Document Type"::Bill);
+            GatewayLine.Validate("Bill No.", Format(GetBillNo(RevoPayment)));
+        end else
+            GatewayLine.Validate("Document Type", GatewayLine."Document Type"::"Credit Memo");
+        GatewayLine."Document No." := PaymentLine."Document No.";
+        GatewayLine.Validate("Due Date", PaymentLine."Posting Date");
+        GatewayLine.Description := CopyStr(StrSubstNo(GatewayDescriptionTxt, RevoHeader."Revo Invoice No.", RevoPayment."Payment Method"),
+            1, MaxStrLen(GatewayLine.Description));
         DimHelper.ApplyCenterDimension(RevoCenter, GatewayLine."Dimension Set ID",
             GatewayLine."Shortcut Dimension 1 Code", GatewayLine."Shortcut Dimension 2 Code");
         GatewayLine.Insert(true);
+        exit(GatewayLine."Line No.");
+    end;
+
+    /// <summary>Orden del cobro dentro de su factura Revo (1, 2…), usado como Nº efecto.</summary>
+    local procedure GetBillNo(RevoPayment: Record "Revo Payment"): Integer
+    var
+        OtherPayment: Record "Revo Payment";
+    begin
+        OtherPayment.SetRange("Header Entry No.", RevoPayment."Header Entry No.");
+        OtherPayment.SetFilter("Entry No.", '..%1', RevoPayment."Entry No.");
+        exit(OtherPayment.Count());
     end;
 
     local procedure GetPostingDate(RevoPayment: Record "Revo Payment"; RevoHeader: Record "Revo Invoice Header"): Date

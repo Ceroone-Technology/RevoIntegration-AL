@@ -99,6 +99,31 @@ page 50410 "Revo Invoices"
                     CurrPage.Update(false);
                 end;
             }
+            action(RedoPayments)
+            {
+                Caption = 'Rehacer cobros';
+                Image = RefreshLines;
+                ToolTip = 'Borra las líneas de cobro SIN REGISTRAR de las facturas seleccionadas y las vuelve a crear con la configuración actual (clientes pasarela, métodos omitidos). Se salta una factura entera si alguno de sus cobros ya está registrado o tiene en el diario líneas que no creó la integración.';
+
+                trigger OnAction()
+                var
+                    RevoHeader: Record "Revo Invoice Header";
+                    Orchestrator: Codeunit "Revo Sync Orchestrator";
+                    Redone: Integer;
+                    Skipped: Integer;
+                    FirstReason: Text;
+                begin
+                    CurrPage.SetSelectionFilter(RevoHeader);
+                    if not Confirm(RedoPaymentsQst, false, RevoHeader.Count()) then
+                        exit;
+                    Orchestrator.RedoPayments(RevoHeader, Redone, Skipped, FirstReason);
+                    if Skipped = 0 then
+                        Message(RedoPaymentsResultMsg, Redone)
+                    else
+                        Message(RedoPaymentsSkippedMsg, Redone, Skipped, FirstReason);
+                    CurrPage.Update(false);
+                end;
+            }
             action(ForcePost)
             {
                 Caption = 'Forzar registro';
@@ -286,6 +311,7 @@ page 50410 "Revo Invoices"
         {
             actionref(SyncLog_Promoted; SyncLog) { }
             actionref(Reprocess_Promoted; Reprocess) { }
+            actionref(RedoPayments_Promoted; RedoPayments) { }
             actionref(PostMatching_Promoted; PostMatching) { }
             actionref(ForcePost_Promoted; ForcePost) { }
             actionref(ForceUpload_Promoted; ForceUpload) { }
@@ -335,6 +361,9 @@ page 50410 "Revo Invoices"
         DeleteDraftQst: Label 'Se borrarán en BC los %1 borradores seleccionados, sin crear documento vacío de numeración. Las facturas volverán a Pendiente y se crearán de nuevo con el mismo número. ¿Continuar?', Comment = '%1 = nº borradores';
         DeleteDraftResultMsg: Label 'Borradores borrados: %1. Pulse "Reprocesar" para volver a crearlos ahora o se crearán en la próxima sincronización.', Comment = '%1 = nº borradores';
         ForceUploadResultMsg: Label 'Subidas a BC (borrador): %1. Con error: %2 (ver vista Con error).', Comment = '%1 = subidas, %2 = con error';
+        RedoPaymentsQst: Label 'Se borrarán las líneas de cobro SIN REGISTRAR de las %1 facturas seleccionadas y se volverán a crear con la configuración actual (clientes pasarela, métodos omitidos). Las facturas con algún cobro ya registrado o con líneas manuales en el diario no se tocan. ¿Continuar?', Comment = '%1 = nº facturas';
+        RedoPaymentsResultMsg: Label 'Cobros rehechos en %1 facturas.', Comment = '%1 = nº facturas';
+        RedoPaymentsSkippedMsg: Label 'Cobros rehechos en %1 facturas. Sin tocar: %2. Primer motivo: %3', Comment = '%1 = rehechas, %2 = saltadas, %3 = motivo';
         SalesDocTypeText: Text;
 
     local procedure CountAlreadyPosted(var RevoHeader: Record "Revo Invoice Header"): Integer

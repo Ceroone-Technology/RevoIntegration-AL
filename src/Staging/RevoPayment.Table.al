@@ -117,6 +117,12 @@ table 50412 "Revo Payment"
             Caption = 'Procesado el';
             ToolTip = 'Especifica la fecha y hora en que se creó la línea de diario de cobro.';
         }
+        field(27; "Gateway Journal Line No."; Integer)
+        {
+            Caption = 'Nº línea diario pasarela';
+            ToolTip = 'Especifica el número de la línea de diario creada al cliente pasarela (0 si el método no tiene pasarela).';
+            Editable = false;
+        }
     }
 
     keys

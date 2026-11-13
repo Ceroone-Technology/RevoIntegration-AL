@@ -30,6 +30,9 @@ codeunit 50408 "Revo Sync Orchestrator"
         PauseBetweenDaysMs: Integer;
         CenterParamTok: Label 'CENTER', Locked = true;
         DateParamTok: Label 'DATE', Locked = true;
+        IntegrationCommentTok: Label 'Metodo de pago:', Locked = true;
+        RedoPaymentMissingTxt: Label '%1: el cobro %2 ya está registrado o su línea se borró del diario. No se ha tocado esta factura.', Comment = '%1 = nº factura Revo, %2 = método de pago';
+        RedoForeignLineTxt: Label '%1: hay una línea suya en el diario %2/%3 que no creó la integración. No se ha tocado esta factura.', Comment = '%1 = nº factura Revo, %2 = plantilla, %3 = sección';
 
     procedure RunDailySync(CenterFilter: Text)
     var
@@ -503,6 +506,111 @@ codeunit 50408 "Revo Sync Orchestrator"
     /// Reprocesa los pagos seleccionados (pendientes o en error) sin límite de intentos.
     /// Solo pasan al diario los de facturas con documento ya creado en BC.
     /// </summary>
+    /// <summary>
+    /// Rehacer cobros: borra las líneas de diario SIN REGISTRAR de los cobros de las facturas seleccionadas y los vuelve a
+    /// crear con la configuración actual (p. ej. tras asignar clientes pasarela u omitir un método). Una factura se salta
+    /// entera, sin cambios, si alguno de sus cobros ya está registrado o su línea se borró a mano, o si hay en el diario
+    /// líneas suyas que no creó la integración: así nunca se duplica un cobro.
+    /// </summary>
+    procedure RedoPayments(var RevoHeader: Record "Revo Invoice Header"; var Redone: Integer; var Skipped: Integer; var FirstReason: Text)
+    var
+        EntryNos: List of [Integer];
+        EntryNo: Integer;
+        Reason: Text;
+    begin
+        RevoHeader.SetFilter(Status, '%1|%2', RevoHeader.Status::Created, RevoHeader.Status::Posted);
+        RevoHeader.SetLoadFields("Entry No.");
+        if RevoHeader.FindSet() then
+            repeat
+                EntryNos.Add(RevoHeader."Entry No.");
+            until RevoHeader.Next() = 0;
+        foreach EntryNo in EntryNos do
+            if RedoHeaderPayments(EntryNo, Reason) then
+                Redone += 1
+            else begin
+                Skipped += 1;
+                if FirstReason = '' then
+                    FirstReason := Reason;
+            end;
+    end;
+
+    local procedure RedoHeaderPayments(HeaderEntryNo: Integer; var Reason: Text): Boolean
+    var
+        RevoHeader: Record "Revo Invoice Header";
+        RevoPayment: Record "Revo Payment";
+        GenJournalLine: Record "Gen. Journal Line";
+        LineId: RecordId;
+        LinesToDelete: List of [RecordId];
+        PaymentEntryNos: List of [Integer];
+        PaymentEntryNo: Integer;
+    begin
+        RevoHeader.Get(HeaderEntryNo);
+        // 1. Las líneas que creó la integración deben seguir en el diario sin registrar.
+        RevoPayment.SetRange("Header Entry No.", HeaderEntryNo);
+        if RevoPayment.FindSet() then
+            repeat
+                PaymentEntryNos.Add(RevoPayment."Entry No.");
+                if RevoPayment.Status = RevoPayment.Status::Created then begin
+                    if not AddLinkedLine(RevoPayment."Journal Template Name", RevoPayment."Journal Batch Name",
+                        RevoPayment."Journal Line No.", LinesToDelete)
+                    then begin
+                        Reason := StrSubstNo(RedoPaymentMissingTxt, RevoHeader."Revo Invoice No.", RevoPayment."Payment Method");
+                        exit(false);
+                    end;
+                    if RevoPayment."Gateway Journal Line No." <> 0 then
+                        if not AddLinkedLine(RevoPayment."Journal Template Name", RevoPayment."Journal Batch Name",
+                            RevoPayment."Gateway Journal Line No.", LinesToDelete)
+                        then begin
+                            Reason := StrSubstNo(RedoPaymentMissingTxt, RevoHeader."Revo Invoice No.", RevoPayment."Payment Method");
+                            exit(false);
+                        end;
+                end;
+            until RevoPayment.Next() = 0;
+        // 2. Otras líneas de la factura en el diario: si las creó la integración (H3) se borran también; si no, no se toca.
+        GenJournalLine.SetRange("External Document No.", RevoHeader."Revo Invoice No.");
+        if GenJournalLine.FindSet() then
+            repeat
+                if not LinesToDelete.Contains(GenJournalLine.RecordId) then begin
+                    if CopyStr(GenJournalLine.Comment, 1, StrLen(IntegrationCommentTok)) <> IntegrationCommentTok then begin
+                        Reason := StrSubstNo(RedoForeignLineTxt, RevoHeader."Revo Invoice No.",
+                            GenJournalLine."Journal Template Name", GenJournalLine."Journal Batch Name");
+                        exit(false);
+                    end;
+                    LinesToDelete.Add(GenJournalLine.RecordId);
+                end;
+            until GenJournalLine.Next() = 0;
+        // 3. Borrar, dejar los cobros en Pendiente y volver a crearlos con la configuración actual.
+        foreach LineId in LinesToDelete do
+            if GenJournalLine.Get(LineId) then
+                GenJournalLine.Delete(true);
+        foreach PaymentEntryNo in PaymentEntryNos do begin
+            RevoPayment.Get(PaymentEntryNo);
+            RevoPayment.Status := RevoPayment.Status::Pending;
+            RevoPayment."Journal Template Name" := '';
+            RevoPayment."Journal Batch Name" := '';
+            RevoPayment."Journal Line No." := 0;
+            RevoPayment."Gateway Journal Line No." := 0;
+            RevoPayment."Error Message" := '';
+            RevoPayment.Attempts := 0;
+            RevoPayment.Modify();
+        end;
+        Commit();
+        foreach PaymentEntryNo in PaymentEntryNos do
+            ProcessPayment(PaymentEntryNo);
+        RefreshPaymentIssue(HeaderEntryNo);
+        exit(true);
+    end;
+
+    local procedure AddLinkedLine(TemplateName: Code[10]; BatchName: Code[10]; LineNo: Integer; var LinesToDelete: List of [RecordId]): Boolean
+    var
+        GenJournalLine: Record "Gen. Journal Line";
+    begin
+        if not GenJournalLine.Get(TemplateName, BatchName, LineNo) then
+            exit(false);
+        LinesToDelete.Add(GenJournalLine.RecordId);
+        exit(true);
+    end;
+
     procedure ReprocessPayments(var RevoPayment: Record "Revo Payment")
     var
         PaymentEntryNos: List of [Integer];

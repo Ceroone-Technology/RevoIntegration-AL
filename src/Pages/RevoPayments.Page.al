@@ -29,6 +29,7 @@ page 50412 "Revo Payments"
                 field("Journal Template Name"; Rec."Journal Template Name") { }
                 field("Journal Batch Name"; Rec."Journal Batch Name") { }
                 field("Journal Line No."; Rec."Journal Line No.") { }
+                field("Gateway Journal Line No."; Rec."Gateway Journal Line No.") { }
             }
         }
     }
