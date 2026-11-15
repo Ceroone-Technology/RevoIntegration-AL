@@ -22,14 +22,15 @@ cliente: **Luis Huapaya** (Ceroone). Detalle técnico y estructura: [README.md](
 | Sandbox **Development_20260421** (copia de producción del 18/04/2026) | Pruebas y publicación con Ctrl+F5 (`.vscode/launch.json`) |
 | **Production** | Solo instalación por `.app` (Administración de extensiones) y el paso a paso |
 
-## Estado a 13/11/2026
+## Estado a 15/11/2026
 
-- Versión **1.0.25.0** en **producción** (PTE, instalada el 13/11 por la mañana). Historial: 1.0.18.0 el 05/11 · 1.0.19.0–1.0.23.0 el 07/11 · 1.0.24.0 el 12/11 23:54 Lima · 1.0.25.0 el 13/11.
+- Versión **1.0.26.0** en **producción** (PTE, 15/11). Historial: 1.0.18.0 el 05/11 · 1.0.19.0–1.0.23.0 el 07/11 · 1.0.24.0 el 12/11 23:54 Lima · 1.0.25.0 el 13/11 · 1.0.26.0 el 15/11.
 - **12 centros en 7 empresas** (los que procesaba el Laravel, ya detenido): Grupo Olé (GAL, GOL, GVI), Duffy (DBU), La Candelaria (CCF), Cebrian (CCA), Ibérica Stadium (SCA), Zurolé (ZCA, ZSM), Rosviple (RLA, ROL, ROZ). Fase 0 (espejo) y fase 1 (borradores) hechas en todos; facturas creadas en borrador y cobros en el diario sin registrar.
 - **Tareas diarias** a la hora del Laravel, escalonadas 5 min (hora Madrid = Lima + 6 h): Grupo Olé 05:55 · Duffy 06:00 · La Candelaria 06:05 · Cebrian 06:10 · Ibérica 06:15 · Zurolé 06:20 · Rosviple 06:25. **Nunca dos relanzamientos a la vez** con secciones compartidas (H4).
 - **Clientes pasarela** (reuniones con Luis del 12/11): por centro y método con cuenta en TESORERIAS (VISA, RESTAURANTE, SODEXO, GOURMET, MARCHANDO, UBER, GLOVO, VOLVEREMOS, COVER, IMPAGADO) un grupo registro cliente y un cliente `PAS-<centro>-<método>` (Cta. clientes = Cta. efectos = 4412xxN / 4415xx1, NAC/NAC, CON, forma de pago **EFECTO**) y su mapeo. 120 en total, aplicados con `config/REVO-PAS-<EMPRESA>.rapidstart` (generados con `scripts/build_rapidstart_gateways.py`). Sin pasarela: Transferencia, Crédito, Bizum (Omitir), Efectivo y Glovo efectivo (pendiente de Luis) y Propinas (sin cuenta).
-- **1.0.25.0**: la línea de la pasarela es de tipo **Efecto** (lo pidió Luis; la 1.0.24.0 la hacía Factura), Nº efecto = orden del cobro en la factura, queda en Cartera. Probado en el sandbox con GALS-000224819 (efecto en Cartera, 4412890 debe). Botón **Rehacer cobros** (Facturas Revo): rehace los cobros sin registrar con la configuración actual.
-- **Siguiente**: prueba con Luis en producción (2 facturas: Rehacer cobros → registrar factura → registrar sus 2 líneas filtrando por *Nº documento externo*, porque el Nº documento se repite en la sección, H2); 5 más para los usuarios; Rehacer cobros del 05 al 12/11 en los 12 centros; fase 2 (registro automático) con el OK de Luis.
+- **1.0.25.0**: la línea de la pasarela es de tipo **Efecto** (lo pidió Luis; la 1.0.24.0 la hacía Factura), queda en Cartera. **1.0.26.0**: Nº efecto = nº de movimiento del cobro Revo (con 1, 2… BC daba «Ya existe efecto G02001/1», porque la sección repite el Nº documento, H6). Probado en el sandbox con GALS-000224819 (efecto en Cartera, 4412890 debe). Botón **Rehacer cobros** (Facturas Revo): rehace los cobros sin registrar con la configuración actual.
+- **Prueba de Luis hecha (15/11)**: 10 facturas de Cebrian Actur registradas con sus cobros (1 rectificativa, 1 completa con NIF, efectivo, tarjeta, Glovo, Uber, Volveremos); 9 efectos en Cartera. El cliente las revisa el lunes 16/11. Registrar cobros siempre por sección, filtrando por *Nº documento externo* (el Nº documento se repite, H2) y con vista previa.
+- **Siguiente**: Rehacer cobros en bloque de todos los cobros sin registrar del 05/11 al 15/11 en los 12 centros (los del 13–15/11 llevan efecto 1/2 y chocarían); fase 2 (registro automático) con el OK de Luis.
 - Reglas aprendidas: no vaciar días con documentos creados por la integración; en el sandbox la app está publicada como **Dev** (publicar con VS Code: cargar el `.app` da AVS0109); en producción es PTE (cargar el `.app`). En Duffy la serie de contactos CONT estaba desfasada (corregido a CONT11281 el 13/11).
 
 ## Acceso de Claude a BC (MCP, solo lectura)
@@ -77,7 +78,7 @@ Ver la lista completa (P1–P10) en el registro.
 ## Decisiones técnicas que conviene recordar
 
 - La integración crea facturas/abonos en borrador con nº = nº de Revo y los registra solo si cuadran con Revo (importe y líneas); si no, *Forzar registro* tras revisión.
-- Cobros: líneas de diario sin registrar en COBROS/ALM…; con *Cliente pasarela*, dos líneas con el mismo nº de documento (BC no admite cliente contra cliente en una línea): Pago al cliente que liquida la factura y **Efecto** al cliente pasarela (Nº efecto 1, 2…, forma de pago del cliente pasarela, que debe crear efectos; BC España lo lleva a la *Cta. efectos* del grupo). Devoluciones: Abono a la pasarela.
+- Cobros: líneas de diario sin registrar en COBROS/ALM…; con *Cliente pasarela*, dos líneas con el mismo nº de documento (BC no admite cliente contra cliente en una línea): Pago al cliente que liquida la factura y **Efecto** al cliente pasarela (Nº efecto = nº de movimiento del cobro Revo, forma de pago del cliente pasarela, que debe crear efectos; BC España lo lleva a la *Cta. efectos* del grupo). Devoluciones: Abono a la pasarela.
 - Cobro negativo en una factura (cambio devuelto con otro método, H5): línea positiva sin tipo ni liquidación.
 - Facturas sin cobros (a 0, invitaciones): forma de pago del centro sin contrapartida (ALMEFECTIV). Forma de pago con contrapartida → cobraría dos veces.
 - Borrar un borrador (botón o página de BC) quita antes el nº de registro para que BC no cree el documento vacío (H1); la factura vuelve a Pendiente y se recrea con el mismo nº.

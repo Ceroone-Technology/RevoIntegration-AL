@@ -139,8 +139,9 @@ codeunit 50405 "Revo Payment Builder"
     /// Cobro con pasarela: línea al cliente pasarela por el importe contrario y con el mismo nº de documento, de modo
     /// que el documento cuadra y el importe queda pendiente en la pasarela hasta su liquidación. Tipo de documento
     /// Efecto si carga a la pasarela (cobro), para que quede en Cartera y se liquide desde allí (reunión con Luis del
-    /// 12/11/2026), y Abono si le abona (devolución). Nº efecto = orden del cobro en la factura Revo (1, 2…), para que
-    /// no se repita si una factura tiene varios cobros a la misma pasarela. Forma de pago = la del cliente pasarela.
+    /// 12/11/2026), y Abono si le abona (devolución). Nº efecto = nº de movimiento del cobro Revo: BC no admite dos
+    /// efectos con el mismo Nº documento y Nº efecto, y la sección repite el Nº documento en todas sus líneas (H2), así
+    /// que un 1, 2… por factura chocaba («Ya existe efecto G02001/1», 15/11/2026). Forma de pago = la del cliente pasarela.
     /// La factura de Revo va en Nº documento externo y en la descripción, para verla en los movimientos de la pasarela.
     /// </summary>
     local procedure InsertGatewayLine(PaymentLine: Record "Gen. Journal Line"; GatewayCustomerNo: Code[20]; RevoCenter: Record "Revo Center"; RevoHeader: Record "Revo Invoice Header"; RevoPayment: Record "Revo Payment"): Integer
@@ -165,7 +166,7 @@ codeunit 50405 "Revo Payment Builder"
             GatewayLine.Validate("Payment Method Code", PaymentLine."Payment Method Code");
         if GatewayLine.Amount > 0 then begin
             GatewayLine.Validate("Document Type", GatewayLine."Document Type"::Bill);
-            GatewayLine.Validate("Bill No.", Format(GetBillNo(RevoPayment)));
+            GatewayLine.Validate("Bill No.", Format(GetBillNo(RevoPayment), 0, 9));
         end else
             GatewayLine.Validate("Document Type", GatewayLine."Document Type"::"Credit Memo");
         GatewayLine."Document No." := PaymentLine."Document No.";
@@ -178,14 +179,10 @@ codeunit 50405 "Revo Payment Builder"
         exit(GatewayLine."Line No.");
     end;
 
-    /// <summary>Orden del cobro dentro de su factura Revo (1, 2…), usado como Nº efecto.</summary>
+    /// <summary>Nº efecto: nº de movimiento del cobro Revo, único en la empresa (ver InsertGatewayLine).</summary>
     local procedure GetBillNo(RevoPayment: Record "Revo Payment"): Integer
-    var
-        OtherPayment: Record "Revo Payment";
     begin
-        OtherPayment.SetRange("Header Entry No.", RevoPayment."Header Entry No.");
-        OtherPayment.SetFilter("Entry No.", '..%1', RevoPayment."Entry No.");
-        exit(OtherPayment.Count());
+        exit(RevoPayment."Entry No.");
     end;
 
     local procedure GetPostingDate(RevoPayment: Record "Revo Payment"; RevoHeader: Record "Revo Invoice Header"): Date
