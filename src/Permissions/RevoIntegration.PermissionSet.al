@@ -34,6 +34,7 @@ permissionset 50400 "REVO INTEGRATION"
         codeunit "Revo Import" = X,
         codeunit "Revo Document Builder" = X,
         codeunit "Revo Payment Builder" = X,
+        codeunit "Revo Payment Poster" = X,
         codeunit "Revo Dimension Helper" = X,
         codeunit "Revo Error Logger" = X,
         codeunit "Revo Sync Orchestrator" = X,

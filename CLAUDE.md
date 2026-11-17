@@ -22,6 +22,11 @@ cliente: **Luis Huapaya** (Ceroone). Detalle técnico y estructura: [README.md](
 | Sandbox **Development_20260421** (copia de producción del 18/04/2026) | Pruebas y publicación con Ctrl+F5 (`.vscode/launch.json`) |
 | **Production** | Solo instalación por `.app` (Administración de extensiones) y el paso a paso |
 
+## Estado a 17/11/2026
+
+- **1.0.27.0 compilada, pendiente de probar en el sandbox e instalar**: botón **Registrar cobros** en Facturas Revo (codeunit `Revo Payment Poster`: registra solo las líneas de cobro de las facturas ya registradas, sección por sección, filtrando por Nº documento externo), estado de cobro **Registrado** (también lo marca *Actualizar estados* si se registró a mano; *Rehacer cobros* no toca facturas con cobros registrados), descripción del pago «Factura <nº> - <método> (<caja>)» (pedido de Pablo) y bloqueo de la sección al numerar líneas (H4).
+- **Prueba del nº de documento en Cebrian (en curso)**: CATARJETA sin serie DIAG-CBRO desde el 17/11 (~17:00 Lima); CCAS-000097765 con cobros rehechos (Nº documento = nº de factura) y factura registrada; falta registrar su cobro y decidir si se vuelve a poner la serie. El Laravel ponía como Nº documento el id interno de cada cobro (916603…), no el nº de factura.
+
 ## Estado a 15/11/2026
 
 - Versión **1.0.26.0** en **producción** (PTE, 15/11). Historial: 1.0.18.0 el 05/11 · 1.0.19.0–1.0.23.0 el 07/11 · 1.0.24.0 el 12/11 23:54 Lima · 1.0.25.0 el 13/11 · 1.0.26.0 el 15/11.
@@ -70,7 +75,9 @@ Ver la lista completa (P1–P10) en el registro.
 
 ## Compilar
 
-- **macOS**: la extensión AL 18.x ya no trae `alc` para darwin. Compilar desde VS Code con **AL: Package** (Cmd+Shift+P), que deja el `.app` en la raíz del repo. Sandbox: **Ejecutar → Ejecutar sin depuración** (publica como Dev). Producción: el usuario carga el `.app` en Administración de extensiones.
+- **macOS**: la extensión AL 18.x no trae `alc` nativo para darwin, pero `alc.dll` se ejecuta con el .NET que instala VS Code:
+  `"$HOME/Library/Application Support/Code/User/globalStorage/ms-dotnettools.vscode-dotnet-runtime/.dotnet/10.0.15~arm64~aspnetcore/dotnet" ~/.vscode/extensions/ms-dynamics-smb.al-*/bin/alc.dll /project:"$PWD" /packagecachepath:"$PWD/.alpackages" /out:"$PWD/Ceroone_Revo TPV Integration_<versión>.app"`
+  (o desde VS Code con **AL: Package**). Sandbox: **Ejecutar → Ejecutar sin depuración** (publica como Dev). Producción: el usuario carga el `.app` en Administración de extensiones.
 - **Windows**: `alc.exe` en `%USERPROFILE%\.vscode\extensions\ms-dynamics-smb.al-*\bin\win32\`:
   `alc /project:"$PWD" /packagecachepath:"$PWD/.alpackages" /out:"$PWD/Ceroone_Revo TPV Integration_<versión>.app"`
 - `.alpackages` no está en el repo: en una máquina nueva, *AL: Download symbols* desde VS Code (sandbox) o `pwsh ./scripts/Get-Symbols.ps1`.

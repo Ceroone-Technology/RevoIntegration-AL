@@ -162,6 +162,32 @@ page 50416 "Revo Invoice Card"
                     CurrPage.Update(false);
                 end;
             }
+            action(PostPayments)
+            {
+                Caption = 'Registrar cobros';
+                Image = PostApplication;
+                Enabled = IsPosted;
+                ToolTip = 'Registra en BC las líneas de cobro SIN REGISTRAR de esta factura (ya registrada): cada cobro liquida la factura y, con cliente pasarela, deja su efecto en Cartera.';
+
+                trigger OnAction()
+                var
+                    RevoHeader: Record "Revo Invoice Header";
+                    PaymentPoster: Codeunit "Revo Payment Poster";
+                    PostedInvoices: Integer;
+                    Skipped: Integer;
+                    FirstReason: Text;
+                begin
+                    if not Confirm(PostPaymentsQst, false, Rec."Revo Invoice No.") then
+                        exit;
+                    RevoHeader.SetRange("Entry No.", Rec."Entry No.");
+                    PaymentPoster.PostPayments(RevoHeader, PostedInvoices, Skipped, FirstReason);
+                    if PostedInvoices > 0 then
+                        Message(PaymentsPostedMsg, Rec."Revo Invoice No.")
+                    else
+                        Message('%1', FirstReason);
+                    CurrPage.Update(false);
+                end;
+            }
             action(ForceUpload)
             {
                 Caption = 'Forzar subida';
@@ -232,6 +258,7 @@ page 50416 "Revo Invoice Card"
         {
             actionref(Reprocess_Promoted; Reprocess) { }
             actionref(ForcePost_Promoted; ForcePost) { }
+            actionref(PostPayments_Promoted; PostPayments) { }
             actionref(ForceUpload_Promoted; ForceUpload) { }
             actionref(DeleteDraft_Promoted; DeleteDraft) { }
             actionref(OpenDocument_Promoted; OpenDocument) { }
@@ -247,6 +274,7 @@ page 50416 "Revo Invoice Card"
         BCStyle: Text;
         HasSalesDocument: Boolean;
         IsDraft: Boolean;
+        IsPosted: Boolean;
         CanForceUpload: Boolean;
         SalesDocTypeText: Text;
         ForceUploadQst: Label 'Se subirá a BC la factura %1 (excluida o sin todas sus líneas; en este caso con una línea de ajuste hasta el total de Revo). Se creará en borrador y, al registrarse, se enviará al SII. Quedará constancia de su usuario. ¿Continuar?', Comment = '%1 = nº factura Revo';
@@ -256,6 +284,8 @@ page 50416 "Revo Invoice Card"
         ForceUploadFailedMsg: Label 'No se ha podido crear el borrador. Vea el mensaje de error de la factura.';
         ForcePostQst: Label 'Se registrará en BC la factura %1 AUNQUE NO CUADRE con Revo. Quedará constancia de su usuario. ¿Continuar?', Comment = '%1 = nº factura Revo';
         ForcePostedMsg: Label 'Factura %1 registrada (forzada).', Comment = '%1 = nº factura Revo';
+        PostPaymentsQst: Label 'Se registrarán en BC los cobros sin registrar de la factura %1. Cada cobro liquidará la factura y, si tiene cliente pasarela, dejará su efecto en Cartera. ¿Continuar?', Comment = '%1 = nº factura Revo';
+        PaymentsPostedMsg: Label 'Cobros de la factura %1 registrados.', Comment = '%1 = nº factura Revo';
         ForcePostFailedMsg: Label 'No se ha podido registrar. Vea "Motivo sin registrar": es un error que BC no permite saltar (cuenta, forma de pago, validación).';
 
     trigger OnAfterGetCurrRecord()
@@ -280,6 +310,7 @@ page 50416 "Revo Invoice Card"
             LinesStyle := 'Standard';
         HasSalesDocument := Rec.HasSalesDocument();
         IsDraft := Rec.Status = Rec.Status::Created;
+        IsPosted := Rec.Status = Rec.Status::Posted;
         CanForceUpload := Rec.CanForceUpload();
         if Rec."Sales Document No." = '' then
             SalesDocTypeText := ''

@@ -241,7 +241,7 @@ codeunit 50403 "Revo Import"
                     RevoPayment.Insert(true);
                 end;
                 // Un pago ya volcado al diario no se toca.
-                if RevoPayment.Status <> RevoPayment.Status::Created then begin
+                if not (RevoPayment.Status in [RevoPayment.Status::Created, RevoPayment.Status::Posted]) then begin
                     RevoPayment.Amount := Json.GetDecimal(JPayment, 'total');
                     RevoPayment.Tip := Json.GetDecimal(JPayment, 'tip');
                     RevoPayment."Change Amount" := Json.GetDecimal(JPayment, 'change');

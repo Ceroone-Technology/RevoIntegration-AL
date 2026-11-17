@@ -40,6 +40,8 @@ page 50417 "Revo Invoice Payments Part"
     begin
         case Rec.Status of
             Rec.Status::Created:
+                StatusStyle := 'Ambiguous';
+            Rec.Status::Posted:
                 StatusStyle := 'Favorable';
             Rec.Status::Error:
                 StatusStyle := 'Unfavorable';

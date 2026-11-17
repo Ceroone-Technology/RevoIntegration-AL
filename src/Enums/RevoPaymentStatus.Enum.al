@@ -7,4 +7,5 @@ enum 50403 "Revo Payment Status"
     value(1; Created) { Caption = 'Creado (diario)'; }
     value(2; Error) { Caption = 'Error'; }
     value(3; Skipped) { Caption = 'Omitido'; }
+    value(4; Posted) { Caption = 'Registrado'; }
 }

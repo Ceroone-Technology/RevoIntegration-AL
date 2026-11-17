@@ -176,6 +176,31 @@ page 50410 "Revo Invoices"
                     CurrPage.Update(false);
                 end;
             }
+            action(PostPayments)
+            {
+                Caption = 'Registrar cobros';
+                Image = PostApplication;
+                ToolTip = 'Registra en BC las líneas de cobro SIN REGISTRAR de las facturas seleccionadas que ya estén registradas: cada cobro liquida su factura y, con cliente pasarela, deja su efecto en Cartera. Solo registra las líneas de esas facturas, sección por sección, como hacerlo a mano filtrando por Nº documento externo. Las facturas en borrador se saltan.';
+
+                trigger OnAction()
+                var
+                    RevoHeader: Record "Revo Invoice Header";
+                    PaymentPoster: Codeunit "Revo Payment Poster";
+                    PostedInvoices: Integer;
+                    Skipped: Integer;
+                    FirstReason: Text;
+                begin
+                    CurrPage.SetSelectionFilter(RevoHeader);
+                    if not Confirm(PostPaymentsQst, false, RevoHeader.Count()) then
+                        exit;
+                    PaymentPoster.PostPayments(RevoHeader, PostedInvoices, Skipped, FirstReason);
+                    if Skipped = 0 then
+                        Message(PostPaymentsResultMsg, PostedInvoices)
+                    else
+                        Message(PostPaymentsSkippedMsg, PostedInvoices, Skipped, FirstReason);
+                    CurrPage.Update(false);
+                end;
+            }
             action(ForceUpload)
             {
                 Caption = 'Forzar subida';
@@ -314,6 +339,7 @@ page 50410 "Revo Invoices"
             actionref(RedoPayments_Promoted; RedoPayments) { }
             actionref(PostMatching_Promoted; PostMatching) { }
             actionref(ForcePost_Promoted; ForcePost) { }
+            actionref(PostPayments_Promoted; PostPayments) { }
             actionref(ForceUpload_Promoted; ForceUpload) { }
             actionref(DeleteDraft_Promoted; DeleteDraft) { }
             actionref(RefreshStatuses_Promoted; RefreshStatuses) { }
@@ -364,6 +390,9 @@ page 50410 "Revo Invoices"
         RedoPaymentsQst: Label 'Se borrarán las líneas de cobro SIN REGISTRAR de las %1 facturas seleccionadas y se volverán a crear con la configuración actual (clientes pasarela, métodos omitidos). Las facturas con algún cobro ya registrado o con líneas manuales en el diario no se tocan. ¿Continuar?', Comment = '%1 = nº facturas';
         RedoPaymentsResultMsg: Label 'Cobros rehechos en %1 facturas.', Comment = '%1 = nº facturas';
         RedoPaymentsSkippedMsg: Label 'Cobros rehechos en %1 facturas. Sin tocar: %2. Primer motivo: %3', Comment = '%1 = rehechas, %2 = saltadas, %3 = motivo';
+        PostPaymentsQst: Label 'Se registrarán en BC los cobros SIN REGISTRAR de las %1 facturas seleccionadas que ya estén registradas. Cada cobro liquidará su factura y, si tiene cliente pasarela, dejará su efecto en Cartera. ¿Continuar?', Comment = '%1 = nº facturas';
+        PostPaymentsResultMsg: Label 'Cobros registrados en %1 facturas.', Comment = '%1 = nº facturas';
+        PostPaymentsSkippedMsg: Label 'Cobros registrados en %1 facturas. Sin registrar: %2. Primer motivo: %3', Comment = '%1 = registradas, %2 = saltadas, %3 = motivo';
         SalesDocTypeText: Text;
 
     local procedure CountAlreadyPosted(var RevoHeader: Record "Revo Invoice Header"): Integer

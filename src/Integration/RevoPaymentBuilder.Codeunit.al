@@ -27,7 +27,7 @@ codeunit 50405 "Revo Payment Builder"
         ZeroAmountTxt: Label 'Importe 0.';
         SkippedMethodTxt: Label 'Método configurado como omitido.';
         PreExistingTxt: Label 'Documento preexistente en BC: pagos no generados para evitar duplicados.';
-        CashierTxt: Label 'Cashier: %1', Comment = '%1 = caja';
+        PaymentDescriptionTxt: Label 'Factura %1 - %2 (%3)', Comment = '%1 = nº factura Revo, %2 = método de pago, %3 = caja';
         PaymentMethodTxt: Label 'Metodo de pago: %1', Comment = '%1 = método de pago';
         GatewayDescriptionTxt: Label 'Factura %1 - %2', Comment = '%1 = nº factura Revo, %2 = método de pago';
 
@@ -72,6 +72,9 @@ codeunit 50405 "Revo Payment Builder"
         LineAmount := -RevoPayment.Amount;
         IsReversed := (IsCreditMemo and (LineAmount < 0)) or ((not IsCreditMemo) and (LineAmount > 0));
 
+        // Bloqueo antes de leer el último nº de línea: dos procesos a la vez en la misma sección (dos relanzamientos,
+        // o un relanzamiento y la tarea diaria) calculaban el mismo nº y uno fallaba con «Ya existe el registro» (H4).
+        LastGenJournalLine.LockTable();
         LastGenJournalLine.SetRange("Journal Template Name", GenJournalBatch."Journal Template Name");
         LastGenJournalLine.SetRange("Journal Batch Name", GenJournalBatch.Name);
         if LastGenJournalLine.FindLast() then;
@@ -96,7 +99,8 @@ codeunit 50405 "Revo Payment Builder"
         if GenJournalBatch."No. Series" = '' then
             GenJournalLine."Document No." := RevoHeader."Sales Document No.";
         GenJournalLine."External Document No." := CopyStr(RevoHeader."Revo Invoice No.", 1, MaxStrLen(GenJournalLine."External Document No."));
-        GenJournalLine.Description := CopyStr(StrSubstNo(CashierTxt, RevoPayment.Cashier), 1, MaxStrLen(GenJournalLine.Description));
+        // Factura y forma de pago también en la línea del cliente, para identificar el cobro desde su ficha (Pablo, 17/11/2026).
+        GenJournalLine.Description := CopyStr(GetPaymentDescription(RevoHeader, RevoPayment), 1, MaxStrLen(GenJournalLine.Description));
         GenJournalLine.Comment := CopyStr(StrSubstNo(PaymentMethodTxt, RevoPayment."Payment Method"), 1, MaxStrLen(GenJournalLine.Comment));
         GenJournalLine.Validate(Amount, LineAmount);
 
@@ -183,6 +187,13 @@ codeunit 50405 "Revo Payment Builder"
     local procedure GetBillNo(RevoPayment: Record "Revo Payment"): Integer
     begin
         exit(RevoPayment."Entry No.");
+    end;
+
+    local procedure GetPaymentDescription(RevoHeader: Record "Revo Invoice Header"; RevoPayment: Record "Revo Payment"): Text
+    begin
+        if RevoPayment.Cashier = '' then
+            exit(StrSubstNo(GatewayDescriptionTxt, RevoHeader."Revo Invoice No.", RevoPayment."Payment Method"));
+        exit(StrSubstNo(PaymentDescriptionTxt, RevoHeader."Revo Invoice No.", RevoPayment."Payment Method", RevoPayment.Cashier));
     end;
 
     local procedure GetPostingDate(RevoPayment: Record "Revo Payment"; RevoHeader: Record "Revo Invoice Header"): Date

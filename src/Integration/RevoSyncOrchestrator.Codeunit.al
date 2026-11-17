@@ -125,6 +125,7 @@ codeunit 50408 "Revo Sync Orchestrator"
     var
         FilteredHeader: Record "Revo Invoice Header";
         CurrHeader: Record "Revo Invoice Header";
+        PaymentPoster: Codeunit "Revo Payment Poster";
         EntryNos: List of [Integer];
         EntryNo: Integer;
         Changed: Integer;
@@ -147,10 +148,14 @@ codeunit 50408 "Revo Sync Orchestrator"
             if not StatusChanged then
                 StatusChanged := CurrHeader.ResetIfDraftDeleted();
             ChecksChanged := CurrHeader.UpdateChecks();
-            if StatusChanged or ChecksChanged then begin
+            if StatusChanged or ChecksChanged then
                 CurrHeader.Modify();
+            // Cobros registrados a mano desde el diario: pasan a Registrado.
+            if CurrHeader.Status = CurrHeader.Status::Posted then
+                if PaymentPoster.MarkManuallyPosted(EntryNo) then
+                    ChecksChanged := true;
+            if StatusChanged or ChecksChanged then
                 Changed += 1;
-            end;
         end;
         exit(Changed);
     end;
@@ -550,6 +555,11 @@ codeunit 50408 "Revo Sync Orchestrator"
         if RevoPayment.FindSet() then
             repeat
                 PaymentEntryNos.Add(RevoPayment."Entry No.");
+                // Un cobro ya registrado no se rehace: se duplicaría.
+                if RevoPayment.Status = RevoPayment.Status::Posted then begin
+                    Reason := StrSubstNo(RedoPaymentMissingTxt, RevoHeader."Revo Invoice No.", RevoPayment."Payment Method");
+                    exit(false);
+                end;
                 if RevoPayment.Status = RevoPayment.Status::Created then begin
                     if not AddLinkedLine(RevoPayment."Journal Template Name", RevoPayment."Journal Batch Name",
                         RevoPayment."Journal Line No.", LinesToDelete)
@@ -650,7 +660,7 @@ codeunit 50408 "Revo Sync Orchestrator"
     begin
         Commit();
         RevoPayment.Get(EntryNo);
-        if RevoPayment.Status in [RevoPayment.Status::Created, RevoPayment.Status::Skipped] then
+        if RevoPayment.Status in [RevoPayment.Status::Created, RevoPayment.Status::Skipped, RevoPayment.Status::Posted] then
             exit;
         RevoHeader.Get(RevoPayment."Header Entry No.");
         if not (RevoHeader.Status in [RevoHeader.Status::Created, RevoHeader.Status::Posted]) then
